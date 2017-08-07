@@ -1,4 +1,5 @@
 from charlm.model.callbacks import LSTMCallback
+from charlm import MASK_TOKEN
 from keras.callbacks import CSVLogger, EarlyStopping, TensorBoard
 from keras.models import Model, Sequential
 from keras.layers import Input, LSTM, Dense, Embedding
@@ -66,7 +67,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
         self._compiled = True
 
     def train(self, epochs=100, batch_size=30, start_from=0,
-              train_key='train', test_key='test'):
+              train_key='train', test_key='test', callback=True):
         left_train = self.loader.X['train'][0]
         right_train = self.loader.X['train'][1]
         y_train = self.loader.y['train']
@@ -74,16 +75,18 @@ class LSTMSiameseNet(LSTMLanguageModel):
         right_test = self.loader.X['test'][1]
         y_test = self.loader.y['test']
 
-        logger = CSVLogger(self.directory + '/epochs.csv')
-        primary = LSTMCallback(self)
         stopper = EarlyStopping(monitor='loss', patience=1)
-        callbacks = [logger, primary, stopper]
+        callbacks = [stopper]
 
-        if keras.backend.backend() == 'tensorflow':
-            board = TensorBoard(os.path.join(self.directory, 'tensorboard'),
-                                batch_size=batch_size, histogram_freq=0,
-                                write_images=True, write_grads=True)
-            callbacks.append(board)
+        if callback:
+            if keras.backend.backend() == 'tensorflow':
+                board = TensorBoard(os.path.join(self.directory, 'tensorboard'),
+                                    batch_size=batch_size, histogram_freq=0,
+                                    write_images=True, write_grads=True)
+                callbacks.append(board)
+            primary = LSTMCallback(self)
+            logger = CSVLogger(self.directory + '/epochs.csv')
+            callbacks.extend([primary, logger])
 
         if not self._compiled:
             print('WARNING: Automatically compiling using default parameters.')
@@ -94,10 +97,23 @@ class LSTMSiameseNet(LSTMLanguageModel):
                               callbacks=callbacks, initial_epoch=start_from)
 
     def distance(self, text1, text2):
-        l_chars, l_indices = self.loader.prepare_text(text1)
-        r_chars, r_indices = self.loader.prepare_text(text2)
+        if not isinstance(text1, np.ndarray):
+            l_chars, l_indices = self.loader.prepare_text(text1)
+        else:
+            const = self.loader.char_to_index[MASK_TOKEN]
+            l_indices = np.pad(text1, (0, self.loader.sentence_len - np.size(text1, -1)), 'constant',
+                               constant_values=const)
+        l_indices = np.reshape(l_indices, (1, -1))
 
-        return self.model.predict([l_indices, r_indices])
+        if not isinstance(text2, np.ndarray):
+            r_chars, r_indices = self.loader.prepare_text(text2)
+        else:
+            const = self.loader.char_to_index[MASK_TOKEN]
+            r_indices = np.pad(text2, (0, self.loader.sentence_len - np.size(text2, -1)), 'constant',
+                               constant_values=const)
+        r_indices = np.reshape(r_indices, (1, -1))
+
+        return self.model.predict([l_indices, r_indices])[0, 0]
 
     def save(self):
         self.loader.save(self.directory)
@@ -111,7 +127,9 @@ class LSTMSiameseNet(LSTMLanguageModel):
             'dropout': self.dropout,
             'dense_units': self.dense_units,
         }
-        pickle.dump(config, open(f2, 'wb'), pickle.HIGHEST_PROTOCOL)
+        with open(f2, 'wb') as f:
+            pickle.dump(config, f, pickle.HIGHEST_PROTOCOL)
+            f.close()
 
     @classmethod
     def load(cls, directory):
@@ -121,6 +139,8 @@ class LSTMSiameseNet(LSTMLanguageModel):
         f2 = open(os.path.join(directory, 'config.pkl'), 'rb')
 
         config = pickle.load(f2)
+        f2.close()
+
         recurrent_neurons = config['recurrent_neurons']
         dense_units = config['dense_units']
         dropout = config.get('dropout', 0.0)

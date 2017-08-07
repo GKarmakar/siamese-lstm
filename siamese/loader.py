@@ -1,7 +1,10 @@
 from charlm.utils.data import DataLoader
 from charlm import MASK_TOKEN, SENTENCE_END_TOKEN
+
 import numpy as np
 import itertools
+import os
+import pickle
 
 
 class TwinLoader(DataLoader):
@@ -62,3 +65,62 @@ class TwinLoader(DataLoader):
                 for j, c in enumerate(d2):
                     self.X[alias][1][i, j] = self.char_to_index[c]
                 self.y[alias][i] = self.pos_value if l1 == l2 else self.neg_value
+
+    def save(self, folder):
+        f1 = os.path.join(folder, 'loader.pkl')
+
+        config = {
+            'paths': self.paths,
+            'path_alias': self.path_alias,
+            'nlines': self.nlines,
+            'embed_type': 'hot_coded' if self._embed_func == self._hot_coded_embed else 'uniform',
+            'embed_dims': self.embed_dims,
+            'sentence_len': self.sentence_len,
+            'char_to_index': self.char_to_index,
+            'index_to_char': self.index_to_char,
+            'raw': self.raw,
+            'raw_label': self.raw_label,
+            'pos_value': self.pos_value,
+            'neg_value': self.neg_value
+        }
+
+        with open(f1, 'wb') as f:
+            pickle.dump(config, f, pickle.HIGHEST_PROTOCOL)
+            f.close()
+
+    @classmethod
+    def load(cls, folder):
+        f1 = os.path.join(folder, 'loader.pkl')
+
+        with open(f1, 'rb') as f:
+            config = pickle.load(f)
+            f.close()
+        paths = config.get('paths', None)
+        path_alias = config.get('path_alias', None)
+        nlines = config.get('nlines', None)
+        embed_type = config.get('embed_type', 'hot_coded')
+        embed_dims = config.get('embed_dims', None)
+        sentence_len = config['sentence_len']
+        pos_value = config.get('pos_value', 0.0)
+        neg_value = config.get('neg_value', 1.0)
+
+        loader = TwinLoader(pos_value=pos_value, neg_value=neg_value,
+                            paths=paths, path_alias=path_alias, nlines=nlines,
+                            embed_type=embed_type, embed_dims=embed_dims,
+                            sentence_len=sentence_len)
+
+        try:
+            char_to_index = config['char_to_index']
+            index_to_char = config['index_to_char']
+            raw_label = config['raw_label']
+            raw = config['raw']
+            loader.char_to_index = char_to_index
+            loader.index_to_char = index_to_char
+            loader.raw = raw
+            loader.raw_label = raw_label
+            loader._create_data()
+        except KeyError as e:
+            # print('WARNING: Can\'t locate loader indices. Reloading might cause inaccuracies...')
+            # loader.load_data()
+            raise e
+        return loader
