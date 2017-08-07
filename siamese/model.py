@@ -8,6 +8,7 @@ from keras import regularizers
 import os
 import numpy as np
 import pickle
+import keras
 
 from siamese.loader import TwinLoader
 from charlm.model.lstm import LSTMLanguageModel
@@ -75,11 +76,14 @@ class LSTMSiameseNet(LSTMLanguageModel):
 
         logger = CSVLogger(self.directory + '/epochs.csv')
         primary = LSTMCallback(self)
-        stopper = EarlyStopping(monitor='train_loss', patience=1)
-        board = TensorBoard(os.path.join(self.directory, 'tensorboard'),
-                            batch_size=batch_size, histogram_freq=0,
-                            write_images=True, write_grads=True)
-        callbacks = [logger, primary, stopper, board]
+        stopper = EarlyStopping(monitor='loss', patience=1)
+        callbacks = [logger, primary, stopper]
+
+        if keras.backend.backend() == 'tensorflow':
+            board = TensorBoard(os.path.join(self.directory, 'tensorboard'),
+                                batch_size=batch_size, histogram_freq=0,
+                                write_images=True, write_grads=True)
+            callbacks.append(board)
 
         if not self._compiled:
             print('WARNING: Automatically compiling using default parameters.')
