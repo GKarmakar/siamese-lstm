@@ -77,9 +77,8 @@ class LSTMSiameseNet(LSTMLanguageModel):
         primary = LSTMCallback(self)
         stopper = EarlyStopping(monitor='train_loss', patience=1)
         board = TensorBoard(os.path.join(self.directory, 'tensorboard'),
-                            batch_size=batch_size, histogram_freq=1,
-                            write_images=True, write_grads=True,
-                            embeddings_freq=1)
+                            batch_size=batch_size, histogram_freq=0,
+                            write_images=True, write_grads=True)
         callbacks = [logger, primary, stopper, board]
 
         if not self._compiled:
