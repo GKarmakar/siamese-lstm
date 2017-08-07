@@ -3,9 +3,9 @@ SENTENCE_LEN = 100
 PATHS = ('data/amazon/train.tsv', 'data/amazon/test.tsv')
 EMBED_TYPE = 'hot_coded'
 EMBED_DIM = None
-LINE_LIMIT = (100, 10)
-POS_VALUE = 1.0
-NEG_VALUE = 0.0
+LINE_LIMIT = (50, 10)
+POS_VALUE = 0.0
+NEG_VALUE = 1.0
 
 # Model settings
 RECURRENT_NEURONS = (512, 512, 128, 64)

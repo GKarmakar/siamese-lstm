@@ -1,11 +1,12 @@
 from charlm.model.callbacks import LSTMCallback
-from keras.callbacks import CSVLogger, EarlyStopping
+from keras.callbacks import CSVLogger, EarlyStopping, TensorBoard
 from keras.models import Model, Sequential
 from keras.layers import Input, LSTM, Dense, Embedding
 from keras.layers.wrappers import Bidirectional
 from keras import regularizers
-import numpy as np
+
 import os
+import numpy as np
 import pickle
 
 from siamese.loader import TwinLoader
@@ -60,7 +61,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
 
     def compile(self, optimizer=RMSprop, learning_rate=0.001):
         self.model.compile(optimizer(lr=learning_rate), 'mean_squared_error',
-                           metrics=[])
+                           metrics=['mae'])
         self._compiled = True
 
     def train(self, epochs=100, batch_size=30, start_from=0,
@@ -75,7 +76,11 @@ class LSTMSiameseNet(LSTMLanguageModel):
         logger = CSVLogger(self.directory + '/epochs.csv')
         primary = LSTMCallback(self)
         stopper = EarlyStopping(monitor='train_loss', patience=1)
-        callbacks = [logger, primary, stopper]
+        board = TensorBoard(os.path.join(self.directory, 'tensorboard'),
+                            batch_size=batch_size, histogram_freq=1,
+                            write_images=True, write_grads=True,
+                            embeddings_freq=1)
+        callbacks = [logger, primary, stopper, board]
 
         if not self._compiled:
             print('WARNING: Automatically compiling using default parameters.')
@@ -123,4 +128,4 @@ class LSTMSiameseNet(LSTMLanguageModel):
         return lstm
 
     def predict(self, text, end_at, verbose=0):
-        raise NotImplementedError('This method is inherited and unused. Use similarity(t1, t2) instead.')
+        raise NotImplementedError('This method is inherited and unused. Use distance(t1, t2) instead.')

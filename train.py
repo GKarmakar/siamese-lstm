@@ -1,8 +1,8 @@
 from argparse import ArgumentParser
 
 import sys
-
 import os
+os.environ['KERAS_BACKEND'] = 'tensorflow'
 
 from siamese.loader import TwinLoader
 from siamese.model import LSTMSiameseNet
