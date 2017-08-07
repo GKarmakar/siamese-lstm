@@ -1,5 +1,5 @@
 from charlm.model.callbacks import LSTMCallback
-from keras.callbacks import CSVLogger
+from keras.callbacks import CSVLogger, EarlyStopping
 from keras.models import Model, Sequential
 from keras.layers import Input, LSTM, Dense, Embedding
 from keras.layers.wrappers import Bidirectional
@@ -74,7 +74,8 @@ class LSTMSiameseNet(LSTMLanguageModel):
 
         logger = CSVLogger(self.directory + '/epochs.csv')
         primary = LSTMCallback(self)
-        callbacks = [logger, primary]
+        stopper = EarlyStopping(monitor='train_loss', patience=1)
+        callbacks = [logger, primary, stopper]
 
         if not self._compiled:
             print('WARNING: Automatically compiling using default parameters.')
