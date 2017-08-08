@@ -11,6 +11,7 @@ args = parser.parse_args()
 try:
     print('Loading model from %s ...' % args.MODEL)
     model = NeuralKNN(args.MODEL)
+    model.fit()
 
     print('Evaluating...')
     acc = model.evaluate()

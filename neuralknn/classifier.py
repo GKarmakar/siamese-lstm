@@ -39,6 +39,9 @@ class NeuralKNN:
         return self._classifier.predict(array)[0]
 
     def evaluate(self, X=None, y=None, sample_weight=None):
+        if not self._isfit:
+            self.fit()
+
         if X is None or y is None:
             X, y = self.__create_data(self.model.loader.raw['test'],
                                       self.model.loader.raw_label['test'])
