@@ -57,8 +57,6 @@ def main(argv):
         'LINE_LIMIT': model.loader.nlines,
         'RECURRENT_NEURONS': model.recurrent_neurons,
         'DROPOUT': model.dropout,
-        'CONV_FILTERS': model.filters,
-        'CONV_KERNEL': model.kernel_size
     })
     print('Current model settings:')
     print_settings(SETTINGS_MAP)

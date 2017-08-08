@@ -8,19 +8,24 @@ from siamese.model import LSTMSiameseNet
 class NeuralKNN:
     def __init__(self, model_path, k=1):
         self.model = LSTMSiameseNet.load(model_path)
-        self._classifier = KNeighborsClassifier(n_neighbors=k, metric='pyfunc',
-                                                func=self.model.distance,
-                                                algorithm='brute')
+        self._classifier = KNeighborsClassifier(n_neighbors=k,
+                                                metric=self.model.distance,
+                                                algorithm='brute', )
         self._isfit = False
 
     def _format_data(self):
-        raw = self.model.loader.raw['train']
-        self._X = np.zeros((len(raw), self.model.loader.sentence_len), dtype=int)
+        self._y = self.model.loader.raw_label['train']
+        self._X, self._y = self.__create_data(self.model.loader.raw['train'],
+                                              self.model.loader.raw_label['train'])
+
+    def __create_data(self, raw, raw_label):
+        X = np.zeros((len(raw), self.model.loader.sentence_len), dtype=int)
         for i, string in enumerate(raw):
             for j, char in enumerate(list(string)):
-                self._X[i, j] = self.model.loader.char_to_index[char]
+                X[i, j] = self.model.loader.char_to_index[char]
 
-        self._y = self.model.loader.raw_label['train']
+        y = raw_label
+        return X, y
 
     def fit(self):
         self._format_data()
@@ -32,3 +37,9 @@ class NeuralKNN:
             self.fit()
         chars, array = self.model.loader.prepare_text(text)
         return self._classifier.predict(array)[0]
+
+    def evaluate(self, X=None, y=None, sample_weight=None):
+        if X is None or y is None:
+            X, y = self.__create_data(self.model.loader.raw['test'],
+                                      self.model.loader.raw_label['test'])
+        return self._classifier.score(X, y, sample_weight)
