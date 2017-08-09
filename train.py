@@ -58,6 +58,8 @@ def main(argv):
         'LINE_LIMIT': model.loader.nlines,
         'RECURRENT_NEURONS': model.recurrent_neurons,
         'DROPOUT': model.dropout,
+        'RECURRENT_REGULARIZER': model.recurrent_reg,
+        'DENSE_REGULARIZER': model.dense_reg
     })
     print('Current model settings:')
     print_settings(SETTINGS_MAP)

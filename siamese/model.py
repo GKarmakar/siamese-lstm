@@ -68,7 +68,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
 
     def compile(self, optimizer=RMSprop, learning_rate=0.001):
         self.model.compile(optimizer(lr=learning_rate), 'mean_squared_error',
-                           metrics=['mae'])
+                           metrics=['mape'])
         self._compiled = True
 
     def train(self, epochs=100, batch_size=30, start_from=0,
