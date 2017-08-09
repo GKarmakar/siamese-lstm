@@ -19,8 +19,11 @@ from siamese.loss import Abs
 
 
 class LSTMSiameseNet(LSTMLanguageModel):
-    def __init__(self, loader, dense_units=128, **kwargs):
+    def __init__(self, loader, dense_units=128, recurrent_reg=0.03,
+                 dense_reg=0.03, **kwargs):
         self.dense_units = dense_units
+        self.recurrent_reg = recurrent_reg
+        self.dense_reg = dense_reg
         LSTMLanguageModel.__init__(self, loader, **kwargs)
 
     def _create_model(self):
@@ -42,22 +45,24 @@ class LSTMSiameseNet(LSTMLanguageModel):
                                         dropout=0.0,
                                         activation='tanh',
                                         recurrent_dropout=self.dropout,
-                                        kernel_regularizer=regularizers.l2(0.03))))
+                                        activity_regularizer=regularizers.l2(self.recurrent_reg))))
 
         twin.add(LSTM(self.recurrent_neurons[-1], implementation=1,
                       return_sequences=False,
                       dropout=0.0,
                       activation='tanh',
                       recurrent_dropout=self.dropout,
-                      kernel_regularizer=regularizers.l2(0.03)))
-        twin.add(Dense(self.dense_units, activation='linear', kernel_regularizer=regularizers.l2(0.03)))
+                      activity_regularizer=regularizers.l2(self.recurrent_reg)))
+        twin.add(Dense(self.dense_units, activation='hard_sigmoid',
+                       activity_regularizer=regularizers.l2(self.dense_reg)))
 
         left_in = Input((self.loader.sentence_len,))
         left_twin = twin(left_in)
         right_in = Input((self.loader.sentence_len,))
         right_twin = twin(right_in)
         merged = Abs()([left_twin, right_twin])
-        out = Dense(1, activation='relu')(merged)
+        out = Dense(1, activation='relu',
+                    activity_regularizer=regularizers.l2(self.dense_reg))(merged)
 
         self.model = Model(inputs=(left_in, right_in), outputs=out)
 
@@ -126,6 +131,8 @@ class LSTMSiameseNet(LSTMLanguageModel):
             'recurrent_neurons': self.recurrent_neurons,
             'dropout': self.dropout,
             'dense_units': self.dense_units,
+            'recurrent_reg': self.recurrent_reg,
+            'dense_reg': self.dense_reg
         }
         with open(f2, 'wb') as f:
             pickle.dump(config, f, pickle.HIGHEST_PROTOCOL)
@@ -143,10 +150,13 @@ class LSTMSiameseNet(LSTMLanguageModel):
 
         recurrent_neurons = config['recurrent_neurons']
         dense_units = config['dense_units']
+        recurrent_reg = config.get('recurrent_reg', 0.03)
+        dense_reg = config.get('dense_reg', 0.03)
         dropout = config.get('dropout', 0.0)
 
         lstm = LSTMSiameseNet(loader, recurrent_neurons=recurrent_neurons,
-                              dropout=dropout, dense_units=dense_units)
+                              dropout=dropout, dense_units=dense_units,
+                              recurrent_reg=recurrent_reg, dense_reg=dense_reg)
         lstm.model.load_weights(f1)
         return lstm
 

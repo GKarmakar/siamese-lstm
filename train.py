@@ -44,7 +44,8 @@ def main(argv):
 
         print('Creating model...')
         model = LSTMSiameseNet(loader, dense_units=DENSE_UNITS, recurrent_neurons=RECURRENT_NEURONS,
-                               dropout=DROPOUT, directory=DIRECTORY)
+                               dropout=DROPOUT, recurrent_reg=RECURRENT_REGULARIZER,
+                               dense_reg=DENSE_REGULARIZER, directory=DIRECTORY)
     else:
         print('Loading model from  %s ...' % args.RESUME_MODEL)
         model = LSTMSiameseNet.load(args.RESUME_MODEL)
