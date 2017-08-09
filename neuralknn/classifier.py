@@ -10,7 +10,7 @@ class NeuralKNN:
         self.model = LSTMSiameseNet.load(model_path)
         self._classifier = KNeighborsClassifier(n_neighbors=k,
                                                 metric=self.model.distance,
-                                                algorithm='brute', )
+                                                algorithm='ball_tree')
         self._isfit = False
 
     def _format_data(self):
@@ -38,11 +38,13 @@ class NeuralKNN:
         chars, array = self.model.loader.prepare_text(text)
         return self._classifier.predict(array)[0]
 
-    def evaluate(self, X=None, y=None, sample_weight=None):
+    def evaluate(self, X_key='test', y_key='test', sample_weight=None):
         if not self._isfit:
             self.fit()
 
-        if X is None or y is None:
-            X, y = self.__create_data(self.model.loader.raw['test'],
-                                      self.model.loader.raw_label['test'])
+        try:
+            X, y = self.__create_data(self.model.loader.raw[X_key],
+                                      self.model.loader.raw_label[y_key])
+        except KeyError as e:
+            raise ValueError('Invalid dataset keys %s, %s' % (X_key, y_key))
         return self._classifier.score(X, y, sample_weight)
