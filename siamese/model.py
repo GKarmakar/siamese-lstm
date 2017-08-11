@@ -15,7 +15,7 @@ from siamese.loader import TwinLoader
 from charlm.model.lstm import LSTMLanguageModel
 from keras.optimizers import RMSprop
 
-from siamese.loss import Abs
+from siamese.loss import Diff
 
 
 class LSTMSiameseNet(LSTMLanguageModel):
@@ -50,19 +50,20 @@ class LSTMSiameseNet(LSTMLanguageModel):
         twin.add(LSTM(self.recurrent_neurons[-1], implementation=1,
                       return_sequences=False,
                       dropout=0.0,
-                      activation='tanh',
+                      activation='linear',
                       recurrent_dropout=self.dropout,
                       kernel_regularizer=regularizers.l2(self.recurrent_reg)))
-        twin.add(Dense(self.dense_units, activation='hard_sigmoid',
-                       kernel_regularizer=regularizers.l2(self.dense_reg)))
+        # twin.add(Dense(self.dense_units, activation='linear',
+        #                kernel_regularizer=regularizers.l2(self.dense_reg)))
 
         left_in = Input((self.loader.sentence_len,))
         left_twin = twin(left_in)
         right_in = Input((self.loader.sentence_len,))
         right_twin = twin(right_in)
-        merged = Abs()([left_twin, right_twin])
+        merged = Diff()([left_twin, right_twin])
         out = Dense(1, activation='relu',
-                    kernel_regularizer=regularizers.l2(self.dense_reg))(merged)
+                    weights=[np.ones((self.recurrent_neurons[-1], 1)), np.ones(1)],
+                    trainable=False)(merged)
 
         self.model = Model(inputs=(left_in, right_in), outputs=out)
 
