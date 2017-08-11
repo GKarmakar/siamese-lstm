@@ -45,16 +45,16 @@ class LSTMSiameseNet(LSTMLanguageModel):
                                         dropout=0.0,
                                         activation='tanh',
                                         recurrent_dropout=self.dropout,
-                                        activity_regularizer=regularizers.l2(self.recurrent_reg))))
+                                        kernel_regularizer=regularizers.l2(self.recurrent_reg))))
 
         twin.add(LSTM(self.recurrent_neurons[-1], implementation=1,
                       return_sequences=False,
                       dropout=0.0,
                       activation='tanh',
                       recurrent_dropout=self.dropout,
-                      activity_regularizer=regularizers.l2(self.recurrent_reg)))
+                      kernel_regularizer=regularizers.l2(self.recurrent_reg)))
         twin.add(Dense(self.dense_units, activation='hard_sigmoid',
-                       activity_regularizer=regularizers.l2(self.dense_reg)))
+                       kernel_regularizer=regularizers.l2(self.dense_reg)))
 
         left_in = Input((self.loader.sentence_len,))
         left_twin = twin(left_in)
@@ -62,7 +62,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
         right_twin = twin(right_in)
         merged = Abs()([left_twin, right_twin])
         out = Dense(1, activation='relu',
-                    activity_regularizer=regularizers.l2(self.dense_reg))(merged)
+                    kernel_regularizer=regularizers.l2(self.dense_reg))(merged)
 
         self.model = Model(inputs=(left_in, right_in), outputs=out)
 
