@@ -15,7 +15,7 @@ from siamese.loader import TwinLoader
 from charlm.model.lstm import LSTMLanguageModel
 from keras.optimizers import RMSprop
 
-from siamese.loss import Diff
+from siamese.loss import *
 
 
 class LSTMSiameseNet(LSTMLanguageModel):
@@ -60,7 +60,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
         left_twin = twin(left_in)
         right_in = Input((self.loader.sentence_len,))
         right_twin = twin(right_in)
-        merged = Diff()([left_twin, right_twin])
+        merged = CosineDist()([left_twin, right_twin])
         out = Dense(1, activation='relu',
                     weights=[np.ones((self.recurrent_neurons[-1], 1)), np.ones(1)],
                     trainable=False)(merged)
@@ -92,6 +92,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
                 callbacks.append(board)
             primary = LSTMCallback(self)
             logger = CSVLogger(self.directory + '/epochs.csv')
+            # noinspection PyTypeChecker
             callbacks.extend([primary, logger])
 
         if not self._compiled:
