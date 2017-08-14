@@ -60,7 +60,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
         left_twin = twin(left_in)
         right_in = Input((self.loader.sentence_len,), name='Right_Inp')
         right_twin = twin(right_in)
-        merged = CosineDist(name='Merge')([left_twin, right_twin])
+        merged = Diff(name='Merge')([left_twin, right_twin])
         # out = Dense(1, activation='relu',
         #             weights=[np.ones((self.recurrent_neurons[-1], 1)), np.ones(1)],
         #             trainable=False)(merged)
@@ -70,8 +70,8 @@ class LSTMSiameseNet(LSTMLanguageModel):
         self.model = Model(inputs=(left_in, right_in), outputs=out)
 
     def compile(self, optimizer=RMSprop, learning_rate=0.001):
-        self.model.compile(optimizer(lr=learning_rate), 'mean_squared_error',
-                           metrics=['mae'])
+        self.model.compile(optimizer(lr=learning_rate), 'mse',
+                           metrics=['mse', 'mae'])
         self._compiled = True
 
     def train(self, epochs=100, batch_size=30, start_from=0,
