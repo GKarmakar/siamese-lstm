@@ -2,7 +2,7 @@ from charlm.model.callbacks import LSTMCallback
 from charlm import MASK_TOKEN
 from keras.callbacks import CSVLogger, EarlyStopping, TensorBoard
 from keras.models import Model, Sequential
-from keras.layers import Input, LSTM, Dense, Embedding
+from keras.layers import Input, LSTM, Dense, Embedding, Activation
 from keras.layers.wrappers import Bidirectional
 from keras import regularizers
 
@@ -32,7 +32,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
         except AttributeError:
             embed_matrix = np.zeros((len(self.loader.index_to_char), self.loader.embed_dims))
 
-        twin = Sequential()
+        twin = Sequential(name='Twin')
         twin.add(Embedding(input_dim=np.size(embed_matrix, 0),
                            output_dim=np.size(embed_matrix, 1),
                            input_shape=(self.loader.sentence_len,),
@@ -50,26 +50,28 @@ class LSTMSiameseNet(LSTMLanguageModel):
         twin.add(LSTM(self.recurrent_neurons[-1], implementation=1,
                       return_sequences=False,
                       dropout=0.0,
-                      activation='linear',
+                      activation='hard_sigmoid',
                       recurrent_dropout=self.dropout,
                       kernel_regularizer=regularizers.l2(self.recurrent_reg)))
         # twin.add(Dense(self.dense_units, activation='linear',
         #                kernel_regularizer=regularizers.l2(self.dense_reg)))
 
-        left_in = Input((self.loader.sentence_len,))
+        left_in = Input((self.loader.sentence_len,), name='Left_Inp')
         left_twin = twin(left_in)
-        right_in = Input((self.loader.sentence_len,))
+        right_in = Input((self.loader.sentence_len,), name='Right_Inp')
         right_twin = twin(right_in)
-        merged = CosineDist()([left_twin, right_twin])
-        out = Dense(1, activation='relu',
-                    weights=[np.ones((self.recurrent_neurons[-1], 1)), np.ones(1)],
-                    trainable=False)(merged)
+        merged = CosineDist(name='Merge')([left_twin, right_twin])
+        # out = Dense(1, activation='relu',
+        #             weights=[np.ones((self.recurrent_neurons[-1], 1)), np.ones(1)],
+        #             trainable=False)(merged)
+        # out = merged
+        out = Activation('relu', name='Out')(merged)
 
         self.model = Model(inputs=(left_in, right_in), outputs=out)
 
     def compile(self, optimizer=RMSprop, learning_rate=0.001):
         self.model.compile(optimizer(lr=learning_rate), 'mean_squared_error',
-                           metrics=['mape'])
+                           metrics=['mae'])
         self._compiled = True
 
     def train(self, epochs=100, batch_size=30, start_from=0,

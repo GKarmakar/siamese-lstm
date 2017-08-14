@@ -67,8 +67,12 @@ def main(argv):
 
     print('Compiling...')
     model.compile(learning_rate=LEARNING_RATE)
+    print(model.model.summary())
     print('Starting training...')
-    model.train(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM)
+    try:
+        model.train(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM)
+    except KeyboardInterrupt:
+        print('\nTraining interrupted...')
 
 
 if __name__ == '__main__':
