@@ -122,7 +122,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
                                constant_values=const)
         r_indices = np.reshape(r_indices, (1, -1))
 
-        return self.model.predict([l_indices, r_indices])[0, 0]
+        return self.model.predict([l_indices, r_indices])[0]
 
     def save(self):
         self.loader.save(self.directory)
