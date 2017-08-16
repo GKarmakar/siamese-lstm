@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 
+import shutil
 import sys
 import os
 os.environ['KERAS_BACKEND'] = 'tensorflow'
@@ -32,6 +33,7 @@ def main(argv):
     }
 
     if args.RESUME_MODEL is None:
+        shutil.rmtree(os.path.join(DIRECTORY, 'tensorboard'), ignore_errors=True)
         os.makedirs(DIRECTORY, exist_ok=True)
 
         print('Loading data...')
@@ -45,7 +47,8 @@ def main(argv):
         print('Creating model...')
         model = LSTMSiameseNet(loader, dense_units=DENSE_UNITS, recurrent_neurons=RECURRENT_NEURONS,
                                dropout=DROPOUT, recurrent_reg=RECURRENT_REGULARIZER,
-                               dense_reg=DENSE_REGULARIZER, directory=DIRECTORY)
+                               dense_reg=DENSE_REGULARIZER, directory=DIRECTORY,
+                               merge_layer=MERGE_LAYER)
     else:
         print('Loading model from  %s ...' % args.RESUME_MODEL)
         model = LSTMSiameseNet.load(args.RESUME_MODEL)
@@ -59,7 +62,8 @@ def main(argv):
         'RECURRENT_NEURONS': model.recurrent_neurons,
         'DROPOUT': model.dropout,
         'RECURRENT_REGULARIZER': model.recurrent_reg,
-        'DENSE_REGULARIZER': model.dense_reg
+        'DENSE_REGULARIZER': model.dense_reg,
+        'MERGE_LAYER': model.merge_layer.__class__
     })
     print('Current model settings:')
     print_settings(SETTINGS_MAP)

@@ -10,6 +10,7 @@ import os
 import numpy as np
 import pickle
 import keras
+import inspect
 
 from siamese.loader import TwinLoader
 from charlm.model.lstm import LSTMLanguageModel
@@ -20,10 +21,19 @@ from siamese.loss import *
 
 class LSTMSiameseNet(LSTMLanguageModel):
     def __init__(self, loader, dense_units=128, recurrent_reg=0.03,
-                 dense_reg=0.03, **kwargs):
+                 dense_reg=0.03, merge_layer='diff', **kwargs):
         self.dense_units = dense_units
         self.recurrent_reg = recurrent_reg
         self.dense_reg = dense_reg
+        if merge_layer == 'diff':
+            self.merge_layer = Diff
+        elif merge_layer == 'cosine':
+            self.merge_layer = CosineDist
+        elif inspect.isclass(merge_layer):
+            self.merge_layer = merge_layer
+        else:
+            raise ValueError("Invalid merge layer. Must be either 'diff', 'cosine' or a class.")
+
         LSTMLanguageModel.__init__(self, loader, **kwargs)
 
     def _create_model(self):
@@ -60,7 +70,8 @@ class LSTMSiameseNet(LSTMLanguageModel):
         left_twin = twin(left_in)
         right_in = Input((self.loader.sentence_len,), name='Right_Inp')
         right_twin = twin(right_in)
-        merged = Diff(name='Merge')([left_twin, right_twin])
+
+        merged = self.merge_layer(name='Merge')([left_twin, right_twin])
         # out = Dense(1, activation='relu',
         #             weights=[np.ones((self.recurrent_neurons[-1], 1)), np.ones(1)],
         #             trainable=False)(merged)
