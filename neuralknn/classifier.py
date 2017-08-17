@@ -10,7 +10,7 @@ class NeuralKNN:
         self.model = LSTMSiameseNet.load(model_path)
         self._classifier = KNeighborsClassifier(n_neighbors=k,
                                                 metric=self.model.distance,
-                                                algorithm='ball_tree')
+                                                algorithm='brute')
         self._isfit = False
 
     def _format_data(self):
