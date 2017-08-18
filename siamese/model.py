@@ -59,18 +59,19 @@ class LSTMSiameseNet(LSTMLanguageModel):
 
         twin.add(LSTM(self.recurrent_neurons[-1], implementation=1,
                       return_sequences=False,
-                      dropout=0.0,
+                      dropout=self.dropout,
                       activation='hard_sigmoid',
                       recurrent_dropout=self.dropout,
                       kernel_regularizer=regularizers.l2(self.recurrent_reg)))
-        # twin.add(Dense(self.dense_units, activation='linear',
-        #                kernel_regularizer=regularizers.l2(self.dense_reg)))
+        twin.add(Dense(self.dense_units, activation='linear',
+                       kernel_regularizer=regularizers.l2(self.dense_reg)))
 
         left_in = Input((self.loader.sentence_len,), name='Left_Inp')
         left_twin = twin(left_in)
         right_in = Input((self.loader.sentence_len,), name='Right_Inp')
         right_twin = twin(right_in)
 
+        # noinspection PyCallingNonCallable
         merged = self.merge_layer(name='Merge')([left_twin, right_twin])
         # out = Dense(1, activation='relu',
         #             weights=[np.ones((self.recurrent_neurons[-1], 1)), np.ones(1)],
