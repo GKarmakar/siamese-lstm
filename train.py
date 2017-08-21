@@ -63,7 +63,7 @@ def main(argv):
         'DROPOUT': model.dropout,
         'RECURRENT_REGULARIZER': model.recurrent_reg,
         'DENSE_REGULARIZER': model.dense_reg,
-        'MERGE_LAYER': str(model.merge_layer)
+        'MERGE_LAYER': model.merge_layer
     })
     print('Current model settings:')
     print_settings(SETTINGS_MAP)
