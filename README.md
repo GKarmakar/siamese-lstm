@@ -4,7 +4,7 @@
 Create model for text classification problems (including intent detection and sentiment analysis) that only requires a small amount of labeled data.
 
 ## Architecture
-Uses a regression Siamese Recurrent Network that serves as the distance function for a k-Nearest Neighbor model.
+Uses a regression Siamese Recurrent Network \[[1](##references)\] that serves as the distance function for a k-Nearest Neighbor model.
 
 The Siamese network learns to generate distance values for each pair of sentences within the corpus. A pair with the same label comes with a desired value of 0, while a pair with different labels comes with a very large arbitrary value.
 
@@ -28,5 +28,6 @@ The learned network is then used by a k-NN model using the training data. Evalua
 - Batch size: 50
 - Dropout: 0.1
 - L2 regularization: 0.03
+
 ## References
-[Learning Text Similarity with Siamese Recurrent Networks](docs/W16-1617.pdf)
+1. [Learning Text Similarity with Siamese Recurrent Networks](docs/W16-1617.pdf)

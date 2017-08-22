@@ -5,10 +5,11 @@ import numpy as np
 import itertools
 import os
 import pickle
+import random
 
 
 class TwinLoader(DataLoader):
-    def __init__(self, pos_value=1.0, neg_value=0.0, **kwargs):
+    def __init__(self, pos_value=0.0, neg_value=1.0, **kwargs):
         DataLoader.__init__(self, **kwargs)
         self.pos_value = pos_value
         self.neg_value = neg_value
@@ -47,24 +48,45 @@ class TwinLoader(DataLoader):
             y_values = self.raw_label[alias]
             combined_values = [(x, y) for x, y in zip(x_values, y_values)]
             combined_values = list(itertools.combinations(combined_values, 2))
+            self.__generate_matrices(alias, combined_values)
 
-            self.X[alias] = (np.ones((len(combined_values), self.sentence_len), dtype=int) *
-                             self.char_to_index[MASK_TOKEN],
-                             np.ones((len(combined_values), self.sentence_len), dtype=int) *
-                             self.char_to_index[MASK_TOKEN])
-            self.y[alias] = np.zeros((len(combined_values),))
+    def __generate_matrices(self, alias, combined_values):
+        self.X[alias] = (np.ones((len(combined_values), self.sentence_len), dtype=int) *
+                         self.char_to_index[MASK_TOKEN],
+                         np.ones((len(combined_values), self.sentence_len), dtype=int) *
+                         self.char_to_index[MASK_TOKEN])
+        self.y[alias] = np.zeros((len(combined_values),))
 
-            for i, tup in enumerate(combined_values):
-                d1 = tup[0][0]
-                d2 = tup[1][0]
-                l1 = tup[0][1]
-                l2 = tup[1][1]
+        for i, tup in enumerate(combined_values):
+            d1, d2 = tup[0][0], tup[1][0]
+            l1, l2 = tup[0][1], tup[1][1]
 
-                for j, c in enumerate(d1):
-                    self.X[alias][0][i, j] = self.char_to_index[c]
-                for j, c in enumerate(d2):
-                    self.X[alias][1][i, j] = self.char_to_index[c]
-                self.y[alias][i] = self.pos_value if l1 == l2 else self.neg_value
+            for j, c in enumerate(d1):
+                self.X[alias][0][i, j] = self.char_to_index[c]
+            for j, c in enumerate(d2):
+                self.X[alias][1][i, j] = self.char_to_index[c]
+            self.y[alias][i] = self.pos_value if l1 == l2 else self.neg_value
+
+    def balance(self, alias='train'):
+        x_values = self.raw[alias]
+        y_values = self.raw_label[alias]
+        combined_values = [(x, y) for x, y in zip(x_values, y_values)]
+        combined_values = list(itertools.combinations(combined_values, 2))
+
+        pos_values = [v for v in combined_values if v[0][1] == v[1][1]]
+        pos_count = len(pos_values)
+        neg_values = [v for v in combined_values if v[0][1] != v[1][1]]
+        neg_count = len(neg_values)
+
+        while pos_count < neg_count:
+            for v in pos_values:
+                combined_values.append(v)
+                pos_count += 1
+                if pos_count >= neg_count:
+                    break
+
+        random.shuffle(combined_values)
+        self.__generate_matrices(alias, combined_values)
 
     def save(self, folder):
         f1 = os.path.join(folder, 'loader.pkl')

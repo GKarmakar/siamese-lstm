@@ -118,6 +118,9 @@ class LSTMSiameseNet(LSTMLanguageModel):
                               batch_size=batch_size, epochs=epochs,
                               callbacks=callbacks, initial_epoch=start_from)
 
+    def train_balanced(self, **kwargs):
+        return self.train(**kwargs)
+
     def distance(self, text1, text2):
         if not isinstance(text1, np.ndarray):
             l_chars, l_indices = self.loader.prepare_text(text1)

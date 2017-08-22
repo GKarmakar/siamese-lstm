@@ -20,6 +20,8 @@ def main(argv):
                         The model will  be saved in the same directory, overriding the --name parameter.''')
     parser.add_argument('--start-from', dest='FROM', default=0, type=int,
                         help='The epoch to start training from. Useful when resuming.')
+    parser.add_argument('--balance', dest='BALANCE', action='store_true',
+                        help='Whether to balance the dataset before training.')
 
     args = parser.parse_args(argv)
 
@@ -74,7 +76,11 @@ def main(argv):
     print(model.model.summary())
     print('Starting training...')
     try:
-        model.train(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM)
+        if not args.BALANCE:
+            model.train(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM)
+        else:
+            model.loader.balance()
+            model.train_balanced(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM)
     except KeyboardInterrupt:
         print('\nTraining interrupted...')
 
