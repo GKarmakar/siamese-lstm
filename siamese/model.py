@@ -82,8 +82,9 @@ class LSTMSiameseNet(LSTMLanguageModel):
         self.model = Model(inputs=(left_in, right_in), outputs=out)
 
     def compile(self, optimizer=RMSprop, learning_rate=0.001):
-        self.model.compile(optimizer(lr=learning_rate), 'mse',
-                           metrics=['mse', 'mae'])
+        # self.model.compile(optimizer(lr=learning_rate), 'mse',
+        #                    metrics=['mse', 'mae'])
+        self.model.compile(optimizer(lr=learning_rate), loss=mean_rectified_infinity_loss)
         self._compiled = True
 
     def train(self, epochs=100, batch_size=30, start_from=0,
@@ -95,7 +96,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
         right_test = self.loader.X['test'][1]
         y_test = self.loader.y['test']
 
-        stopper = EarlyStopping(monitor='loss', patience=1)
+        stopper = EarlyStopping(monitor='loss', patience=4)
         callbacks = [stopper]
 
         if callback:
@@ -134,7 +135,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
                                constant_values=const)
         r_indices = np.reshape(r_indices, (1, -1))
 
-        return self.model.predict([l_indices, r_indices])[0]
+        return self.model.predict([l_indices, r_indices])[0, 0]
 
     def save(self):
         self.loader.save(self.directory)
