@@ -60,11 +60,11 @@ class LSTMSiameseNet(LSTMLanguageModel):
         twin.add(LSTM(self.recurrent_neurons[-1], implementation=1,
                       return_sequences=False,
                       dropout=self.dropout,
-                      activation='hard_sigmoid',
+                      activation='linear',
                       recurrent_dropout=self.dropout,
                       kernel_regularizer=regularizers.l2(self.recurrent_reg)))
-        twin.add(Dense(self.dense_units, activation='linear',
-                       kernel_regularizer=regularizers.l2(self.dense_reg)))
+        # twin.add(Dense(self.dense_units, activation='linear',
+        #                kernel_regularizer=regularizers.l2(self.dense_reg)))
 
         left_in = Input((self.loader.sentence_len,), name='Left_Inp')
         left_twin = twin(left_in)
