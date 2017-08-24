@@ -2,10 +2,6 @@ from keras.layers.merge import Add
 import keras.backend as K
 
 
-def energy():
-    pass
-
-
 def energy_loss(y_true, y_pred):
     pass
 
