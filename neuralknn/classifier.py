@@ -13,10 +13,10 @@ class NeuralKNN:
                                                 algorithm='brute')
         self._isfit = False
 
-    def _format_data(self):
-        self._y = self.model.loader.raw_label['train']
-        self._X, self._y = self.__create_data(self.model.loader.raw['train'],
-                                              self.model.loader.raw_label['train'])
+    def _format_data(self, key):
+        self._y = self.model.loader.raw_label[key]
+        self._X, self._y = self.__create_data(self.model.loader.raw[key],
+                                              self.model.loader.raw_label[key])
 
     def __create_data(self, raw, raw_label):
         X = np.zeros((len(raw), self.model.loader.sentence_len), dtype=int)
@@ -27,8 +27,8 @@ class NeuralKNN:
         y = raw_label
         return X, y
 
-    def fit(self):
-        self._format_data()
+    def fit(self, key='train'):
+        self._format_data(key)
         self._classifier.fit(self._X, self._y)
         self._isfit = True
 
@@ -38,13 +38,13 @@ class NeuralKNN:
         chars, array = self.model.loader.prepare_text(text)
         return self._classifier.predict(array)[0]
 
-    def evaluate(self, X_key='test', y_key='test', sample_weight=None):
+    def evaluate(self, key='test', sample_weight=None):
         if not self._isfit:
             self.fit()
 
         try:
-            X, y = self.__create_data(self.model.loader.raw[X_key],
-                                      self.model.loader.raw_label[y_key])
+            X, y = self.__create_data(self.model.loader.raw[key],
+                                      self.model.loader.raw_label[key])
         except KeyError as e:
-            raise ValueError('Invalid dataset keys %s, %s' % (X_key, y_key))
+            raise ValueError('Invalid dataset keys %s' % key)
         return self._classifier.score(X, y, sample_weight)
