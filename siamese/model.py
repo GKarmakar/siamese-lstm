@@ -57,14 +57,22 @@ class LSTMSiameseNet(LSTMLanguageModel):
                                         recurrent_dropout=self.dropout,
                                         kernel_regularizer=regularizers.l2(self.recurrent_reg))))
 
-        twin.add(LSTM(self.recurrent_neurons[-1], implementation=1,
-                      return_sequences=False,
-                      dropout=self.dropout,
-                      activation='linear',
-                      recurrent_dropout=self.dropout,
-                      kernel_regularizer=regularizers.l2(self.recurrent_reg)))
-        # twin.add(Dense(self.dense_units, activation='linear',
-        #                kernel_regularizer=regularizers.l2(self.dense_reg)))
+        if self.dense_units > 0:
+            twin.add(LSTM(self.recurrent_neurons[-1], implementation=1,
+                          return_sequences=False,
+                          dropout=self.dropout,
+                          activation='hard_sigmoid',
+                          recurrent_dropout=self.dropout,
+                          kernel_regularizer=regularizers.l2(self.recurrent_reg)))
+            twin.add(Dense(self.dense_units, activation='linear',
+                           kernel_regularizer=regularizers.l2(self.dense_reg)))
+        else:
+            twin.add(LSTM(self.recurrent_neurons[-1], implementation=1,
+                          return_sequences=False,
+                          dropout=self.dropout,
+                          activation='linear',
+                          recurrent_dropout=self.dropout,
+                          kernel_regularizer=regularizers.l2(self.recurrent_reg)))
 
         left_in = Input((self.loader.sentence_len,), name='Left_Inp')
         left_twin = twin(left_in)
@@ -96,7 +104,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
         right_test = self.loader.X['test'][1]
         y_test = self.loader.y['test']
 
-        stopper = EarlyStopping(monitor='loss', patience=4)
+        stopper = EarlyStopping(monitor='val_loss', patience=4)
         callbacks = [stopper]
 
         if callback:
@@ -105,7 +113,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
                                     batch_size=batch_size, histogram_freq=0,
                                     write_images=True, write_grads=True)
                 callbacks.append(board)
-            primary = LSTMCallback(self)
+            primary = LSTMCallback(self, metric='val_loss')
             logger = CSVLogger(self.directory + '/epochs.csv')
             # noinspection PyTypeChecker
             callbacks.extend([primary, logger])
