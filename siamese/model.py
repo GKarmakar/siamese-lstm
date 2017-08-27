@@ -32,7 +32,8 @@ class LSTMSiameseNet(LSTMLanguageModel):
         elif inspect.isclass(merge_layer):
             self.merge_layer = merge_layer
         else:
-            raise ValueError("Invalid merge layer. Must be either 'diff', 'cosine' or a class.")
+            raise ValueError("Invalid merge layer. Must be either 'diff', 'cosine'"
+                             " or a class inheriting keras.layer.Layer.")
 
         LSTMLanguageModel.__init__(self, loader, **kwargs)
 
