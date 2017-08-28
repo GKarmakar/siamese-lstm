@@ -7,12 +7,12 @@ def energy_loss(y_true, y_pred):
 
 
 def mean_rectified_infinity_loss(y_true, y_pred):
-    k = 100.0
+    k = 10.0
 
     cond = K.equal(y_true, K.zeros_like(y_true))
     if K.backend() == 'tensorflow':
         import tensorflow as tf
-        err = tf.where(cond, K.square(y_pred - y_true), K.exp(-y_pred))
+        err = tf.where(cond, K.square(y_pred - y_true), K.exp(-y_pred / k))
     else:
         from theano.ifelse import ifelse
         err = ifelse(cond, K.square(y_pred - y_true), K.exp(-y_pred / k))
