@@ -15,8 +15,9 @@ from charlm.utils.settings import *
 
 
 def main(argv):
-    gpu_opts = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
-    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_opts))
+    config = tf.ConfigProto()
+    config.gpu_options.per_process_gpu_memory_fraction = 0.5
+    sess = tf.Session(config=config)
     K.set_session(sess)
 
     parser = ArgumentParser()
