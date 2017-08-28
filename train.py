@@ -4,6 +4,9 @@ import shutil
 import sys
 import os
 os.environ['KERAS_BACKEND'] = 'tensorflow'
+import tensorflow as tf
+import keras.backend as K
+
 
 from siamese.loader import TwinLoader
 from siamese.model import LSTMSiameseNet
@@ -12,6 +15,10 @@ from charlm.utils.settings import *
 
 
 def main(argv):
+    gpu_opts = tf.GPUOptions(per_process_gpu_memory_fraction=0.5)
+    sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_opts))
+    K.set_session(sess)
+
     parser = ArgumentParser()
     parser.add_argument('--name', required=False, default='default', dest='MODEL_NAME',
                         help='The directory within trained/ where the new model and logs will be stored.')

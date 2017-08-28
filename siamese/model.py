@@ -126,7 +126,8 @@ class LSTMSiameseNet(LSTMLanguageModel):
         return self.model.fit([left_train, right_train], y_train,
                               validation_data=([left_test, right_test], y_test),
                               batch_size=batch_size, epochs=epochs,
-                              callbacks=callbacks, initial_epoch=start_from)
+                              callbacks=callbacks, initial_epoch=start_from,
+                              shuffle=True)
 
     def train_balanced(self, **kwargs):
         return self.train(**kwargs)
