@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 import shutil
 import sys
 import os
+
 os.environ['KERAS_BACKEND'] = 'tensorflow'
 
 from siamese.loader import TwinLoader
@@ -62,6 +63,7 @@ def main(argv):
         'EMBED_DIM': model.loader.embed_dims,
         'LINE_LIMIT': model.loader.nlines,
         'RECURRENT_NEURONS': model.recurrent_neurons,
+        'DENSE_NEURONS': model.dense_units,
         'DROPOUT': model.dropout,
         'RECURRENT_REGULARIZER': model.recurrent_reg,
         'DENSE_REGULARIZER': model.dense_reg,

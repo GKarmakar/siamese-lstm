@@ -44,6 +44,9 @@ class TwinLoader(DataLoader):
 
     def _create_data(self):
         for alias in self.raw.keys():
+            if 'ignore' in alias:
+                continue
+
             x_values = self.raw[alias]
             y_values = self.raw_label[alias]
             combined_values = [(x, y) for x, y in zip(x_values, y_values)]

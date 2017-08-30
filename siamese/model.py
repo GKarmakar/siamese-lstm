@@ -107,7 +107,8 @@ class LSTMSiameseNet(LSTMLanguageModel):
         y_test = self.loader.y['test']
 
         stopper = EarlyStopping(monitor='val_loss', patience=4)
-        callbacks = [stopper]
+        stopper2 = EarlyStopping(monitor='loss', patience=2)
+        callbacks = [stopper, stopper2]
 
         if callback:
             if keras.backend.backend() == 'tensorflow':
