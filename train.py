@@ -26,7 +26,7 @@ def main(argv):
 
     args = parser.parse_args(argv)
 
-    ALIAS = ('train', 'test')
+    ALIAS = ('train', 'test', 'ignore')
     DIRECTORY = 'trained/' + args.MODEL_NAME
     SETTINGS_MAP = {
         'START_FROM': args.FROM,
