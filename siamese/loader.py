@@ -1,6 +1,7 @@
 from charlm.utils.data import DataLoader
 from charlm import MASK_TOKEN, SENTENCE_END_TOKEN
 
+import math
 import numpy as np
 import itertools
 import os
@@ -16,7 +17,7 @@ class TwinLoader(DataLoader):
         self.raw_label = {}
         del self.mask
 
-    def load_data(self):
+    def load_data(self, skip_gen=False):
         if self.path_alias is None:
             self.path_alias = self.paths[:]
 
@@ -40,7 +41,8 @@ class TwinLoader(DataLoader):
         all_raw = [j for i in self.raw.values() for j in i]
         self._index_chars(all_raw)
         self._embed_func()
-        self._create_data()
+        if not skip_gen:
+            self._create_data()
 
     def _create_data(self):
         for alias in self.raw.keys():
@@ -51,9 +53,9 @@ class TwinLoader(DataLoader):
             y_values = self.raw_label[alias]
             combined_values = [(x, y) for x, y in zip(x_values, y_values)]
             combined_values = list(itertools.combinations(combined_values, 2))
-            self.__generate_matrices(alias, combined_values)
+            self.__create_matrices(alias, combined_values)
 
-    def __generate_matrices(self, alias, combined_values):
+    def __create_matrices(self, alias, combined_values):
         self.X[alias] = (np.ones((len(combined_values), self.sentence_len), dtype=int) *
                          self.char_to_index[MASK_TOKEN],
                          np.ones((len(combined_values), self.sentence_len), dtype=int) *
@@ -69,6 +71,23 @@ class TwinLoader(DataLoader):
             for j, c in enumerate(d2):
                 self.X[alias][1][i, j] = self.char_to_index[c]
             self.y[alias][i] = self.pos_value if l1 == l2 else self.neg_value
+
+    def generate(self, key, batch_size):
+        x_values = self.raw[key]
+        y_values = self.raw_label[key]
+        combined_values = [(x, y) for x, y in zip(x_values, y_values)]
+        combined_values = list(itertools.combinations(combined_values, 2))
+        while True:
+            for i in range(batch_size, len(combined_values), batch_size):
+                self.__create_matrices(key, combined_values[i - batch_size:i])
+                yield [self.X[key][0], self.X[key][1]], self.y[key]
+
+    def steps_per_epoch(self, key, batch_size):
+        x_values = self.raw[key]
+        y_values = self.raw_label[key]
+        combined_values = [(x, y) for x, y in zip(x_values, y_values)]
+        combined_values = list(itertools.combinations(combined_values, 2))
+        return int(math.ceil(float(len(combined_values)) / float(batch_size)))
 
     def balance(self, alias='train'):
         x_values = self.raw[alias]
@@ -89,7 +108,7 @@ class TwinLoader(DataLoader):
                     break
 
         random.shuffle(combined_values)
-        self.__generate_matrices(alias, combined_values)
+        self.__create_matrices(alias, combined_values)
 
     def save(self, folder):
         f1 = os.path.join(folder, 'loader.pkl')

@@ -1,9 +1,9 @@
 # Data settings
 SENTENCE_LEN = 100
-PATHS = ('data/amazon/train.tsv', 'data/amazon/test.tsv')
+PATHS = ('data/amazon/train.tsv', 'data/amazon/test.tsv', 'data/amazon/test.tsv')
 EMBED_TYPE = 'hot_coded'
 EMBED_DIM = None
-LINE_LIMIT = (10, 10)
+LINE_LIMIT = (10, 10, None)
 POS_VALUE = 0.0
 NEG_VALUE = 1.0
 

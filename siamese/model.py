@@ -91,21 +91,13 @@ class LSTMSiameseNet(LSTMLanguageModel):
         self.model = Model(inputs=(left_in, right_in), outputs=out)
 
     def compile(self, optimizer=RMSprop, learning_rate=0.001):
-        # self.model.compile(optimizer(lr=learning_rate), 'mse',
-        #                    metrics=['mse', 'mae'])
         self.model.compile(optimizer(lr=learning_rate), loss=mean_rectified_infinity_loss,
                            metrics=[mean_rectified_infinity_loss])
         self._compiled = True
 
     def train(self, epochs=100, batch_size=30, start_from=0,
-              train_key='train', test_key='test', callback=True):
-        left_train = self.loader.X['train'][0]
-        right_train = self.loader.X['train'][1]
-        y_train = self.loader.y['train']
-        left_test = self.loader.X['test'][0]
-        right_test = self.loader.X['test'][1]
-        y_test = self.loader.y['test']
-
+              train_key='train', test_key='test', callback=True,
+              generate=False):
         stopper = EarlyStopping(monitor='val_loss', patience=4)
         stopper2 = EarlyStopping(monitor='loss', patience=2)
         callbacks = [stopper, stopper2]
@@ -124,14 +116,32 @@ class LSTMSiameseNet(LSTMLanguageModel):
         if not self._compiled:
             print('WARNING: Automatically compiling using default parameters.')
             self.compile()
-        return self.model.fit([left_train, right_train], y_train,
-                              validation_data=([left_test, right_test], y_test),
-                              batch_size=batch_size, epochs=epochs,
-                              callbacks=callbacks, initial_epoch=start_from,
-                              shuffle=True)
+        if not generate:
+            left_train = self.loader.X['train'][0]
+            right_train = self.loader.X['train'][1]
+            y_train = self.loader.y['train']
+            left_test = self.loader.X['test'][0]
+            right_test = self.loader.X['test'][1]
+            y_test = self.loader.y['test']
 
-    def train_balanced(self, **kwargs):
-        return self.train(**kwargs)
+            return self.model.fit([left_train, right_train], y_train,
+                                  validation_data=([left_test, right_test], y_test),
+                                  batch_size=batch_size, epochs=epochs,
+                                  callbacks=callbacks, initial_epoch=start_from,
+                                  shuffle=True)
+        else:
+            return self.model.fit_generator(self.loader.generate(train_key, batch_size),
+                                            steps_per_epoch=self.loader.steps_per_epoch(train_key, batch_size),
+                                            epochs=epochs, callbacks=callbacks,
+                                            validation_data=self.loader.generate(test_key, batch_size),
+                                            validation_steps=self.loader.steps_per_epoch(test_key, batch_size),
+                                            max_queue_size=1, workers=1, initial_epoch=start_from)
+
+    def train_balanced(self, generate=False, **kwargs):
+        return self.train(generate=generate, **kwargs)
+
+    def train_generator(self, **kwargs):
+        return self.train(generate=True, **kwargs)
 
     def distance(self, text1, text2):
         if not isinstance(text1, np.ndarray):

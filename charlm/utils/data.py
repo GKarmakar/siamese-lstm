@@ -2,6 +2,7 @@ import numpy as np
 import string
 import pickle
 import os
+import math
 
 from charlm import SENTENCE_END_TOKEN, MASK_TOKEN, DEFAULT_TOKEN
 
@@ -37,7 +38,7 @@ class DataLoader:
         self.mask = {}
         self.raw = {}
 
-    def load_data(self):
+    def load_data(self, skip_gen=False):
         if self.path_alias is None:
             self.path_alias = self.paths[:]
 
@@ -55,7 +56,8 @@ class DataLoader:
         all_raw = [j for i in self.raw.values() for j in i]
         self._index_chars(all_raw)
         self._embed_func()
-        self._create_data()
+        if not skip_gen:
+            self._create_data()
 
     def _index_chars(self, documents):
         self.char_to_index = {}
@@ -121,6 +123,33 @@ class DataLoader:
             else:
                 indices[0, i] = self.char_to_index[ch]
         return chars, indices
+
+    def generate(self, key, batch_size):
+        while True:
+            for i in range(batch_size, len(self.raw[key]), batch_size):
+                x = np.ones((batch_size, self.sentence_len), dtype=int) * self.char_to_index[MASK_TOKEN]
+                y = np.zeros((batch_size, self.sentence_len, len(self.index_to_char)),
+                             dtype=np.float32)
+                mask = np.zeros((batch_size, self.sentence_len), dtype=np.float32)
+
+                value = self.raw[key][i-batch_size:i]
+
+                for j, doc in enumerate(value):
+                    chars = list(doc)[:self.sentence_len - 1]
+                    chars.append(SENTENCE_END_TOKEN)
+                    for k, c in enumerate(chars):
+                        x[j, k] = self.char_to_index[c]
+                for j, doc in enumerate(value[1:]):
+                    chars = list(doc)[:self.sentence_len - 1]
+                    chars.append(SENTENCE_END_TOKEN)
+                    for k, c in enumerate(chars):
+                        y[j, k] = to_hot_coded(self.char_to_index[c], len(self.index_to_char))
+                        mask[j, k] = 1.0
+
+                yield x, y, mask
+
+    def steps_per_epoch(self, key, batch_size):
+        return int(math.ceil(float(len(self.raw[key])) / float(batch_size)))
 
     def save(self, folder):
         f1 = os.path.join(folder, 'loader.pkl')

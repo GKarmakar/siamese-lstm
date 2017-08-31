@@ -23,6 +23,9 @@ def main(argv):
                         help='The epoch to start training from. Useful when resuming.')
     parser.add_argument('--balance', dest='BALANCE', action='store_true',
                         help='Whether to balance the dataset before training.')
+    parser.add_argument('--dynamic', dest='DYNAMIC', action='store_true',
+                        help='Makes the model generate data dynamically during training. '
+                             'Helps reduce memory usage for large datasets')
 
     args = parser.parse_args(argv)
 
@@ -42,7 +45,7 @@ def main(argv):
         print('Loading data...')
         loader = TwinLoader(paths=PATHS, path_alias=ALIAS, nlines=LINE_LIMIT,
                             embed_type=EMBED_TYPE, embed_dims=EMBED_DIM, sentence_len=SENTENCE_LEN)
-        loader.load_data()
+        loader.load_data(skip_gen=args.DYNAMIC)
         print('Loading complete.')
         print('\tTotal document count: %d' % loader.doc_count())
         print('\tUnique characters: %d' % (len(loader.index_to_char) - 2))
@@ -79,10 +82,10 @@ def main(argv):
     print('Starting training...')
     try:
         if not args.BALANCE:
-            model.train(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM)
+            model.train(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM, generate=args.DYNAMIC)
         else:
             model.loader.balance()
-            model.train_balanced(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM)
+            model.train_balanced(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM, generate=args.DYNAMIC)
     except KeyboardInterrupt:
         print('\nTraining interrupted...')
 

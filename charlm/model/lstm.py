@@ -79,6 +79,24 @@ class LSTMLanguageModel:
                               batch_size=batch_size, epochs=epochs,
                               callbacks=callbacks, initial_epoch=start_from)
 
+    def train_generator(self, epochs=100, batch_size=30, start_from=0,
+                        train_key='train', test_key='test'):
+        logger = CSVLogger(self.directory + '/epochs.csv')
+        primary = LSTMCallback(self)
+
+        callbacks = [logger, primary]
+
+        if not self._compiled:
+            print('WARNING: Automatically compiling using default parameters.')
+            self.compile()
+
+        return self.model.fit_generator(self.loader.generate(train_key, batch_size=batch_size),
+                                        steps_per_epoch=self.loader.steps_per_epoch(train_key, batch_size=batch_size),
+                                        epochs=epochs, callbacks=callbacks,
+                                        validation_data=self.loader.generate(test_key, batch_size=batch_size),
+                                        validation_steps=self.loader.steps_per_epoch(test_key, batch_size=batch_size),
+                                        max_queue_size=1, workers=1, initial_epoch=start_from)
+
     def predict(self, text, end_at, verbose=0):
         index_to_char = self.loader.index_to_char
         chars, indices = self.loader.prepare_text(text)
