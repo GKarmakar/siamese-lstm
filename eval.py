@@ -1,7 +1,19 @@
 from argparse import ArgumentParser
+from threading import Thread
+import time
 
 from neuralknn.classifier import NeuralKNN
 
+evaluating = False
+
+
+def progress():
+    global evaluating
+    elapsed = 0
+    while evaluating:
+        print('Time elapsed: %ds...' % elapsed, end='\r')
+        time.sleep(1)
+        elapsed += 1
 
 parser = ArgumentParser()
 parser.add_argument(dest='MODEL',
@@ -20,10 +32,19 @@ try:
     model = NeuralKNN(args.MODEL, k=args.K)
     model.fit(key=args.SET)
 
-    print('Evaluating...')
-    acc = model.evaluate(key=args.VAL_SET)
+    thread = Thread(target=progress)
 
-    print('Accuracy: %.3f' % acc)
+    evaluating = True
+    print('Evaluating...')
+    thread.daemon = True
+    thread.start()
+    acc = model.evaluate(key=args.VAL_SET)
+    evaluating = False
+
+    print('\nAccuracy: %.3f' % acc)
 except FileNotFoundError:
     print('Invalid model directory')
     quit()
+except KeyboardInterrupt:
+    evaluating = False
+    print('\nEvaluation interrupted.')
