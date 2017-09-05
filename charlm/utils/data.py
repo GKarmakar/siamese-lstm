@@ -116,12 +116,12 @@ class DataLoader:
 
     def prepare_text(self, text):
         chars = list(text)[:self.sentence_len]
-        indices = np.ones((1, self.sentence_len), dtype=np.float32) * self.char_to_index[MASK_TOKEN]
+        indices = np.ones((self.sentence_len,), dtype=np.float32) * self.char_to_index[MASK_TOKEN]
         for i, ch in enumerate(chars):
             if ch not in self.index_to_char:
-                indices[0, i] = self.char_to_index[DEFAULT_TOKEN]
+                indices[i] = self.char_to_index[DEFAULT_TOKEN]
             else:
-                indices[0, i] = self.char_to_index[ch]
+                indices[i] = self.char_to_index[ch]
         return chars, indices
 
     def generate(self, key, batch_size):

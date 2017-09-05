@@ -1,8 +1,7 @@
 from charlm.model.callbacks import LSTMCallback
-from charlm import MASK_TOKEN
 from keras.callbacks import CSVLogger, EarlyStopping, TensorBoard
 from keras.models import Model, Sequential
-from keras.layers import Input, LSTM, Dense, Embedding, Activation
+from keras.layers import Input, LSTM, Dense, Embedding, Activation, Masking
 from keras.layers.wrappers import Bidirectional
 from keras import regularizers
 
@@ -12,7 +11,7 @@ import pickle
 import keras
 import inspect
 
-from siamese.loader import TwinLoader
+from siamese.loader import TwinLoader, TwinWordLoader
 from charlm.model.lstm import LSTMLanguageModel
 from keras.optimizers import RMSprop
 
@@ -144,22 +143,23 @@ class LSTMSiameseNet(LSTMLanguageModel):
         return self.train(generate=True, **kwargs)
 
     def distance(self, text1, text2):
-        if not isinstance(text1, np.ndarray):
-            l_chars, l_indices = self.loader.prepare_text(text1)
-        else:
-            const = self.loader.char_to_index[MASK_TOKEN]
-            l_indices = np.pad(text1, (0, self.loader.sentence_len - np.size(text1, -1)), 'constant',
-                               constant_values=const)
+        l_chars, l_indices = self.loader.prepare_text(text1)
         l_indices = np.reshape(l_indices, (1, -1))
 
-        if not isinstance(text2, np.ndarray):
-            r_chars, r_indices = self.loader.prepare_text(text2)
-        else:
-            const = self.loader.char_to_index[MASK_TOKEN]
-            r_indices = np.pad(text2, (0, self.loader.sentence_len - np.size(text2, -1)), 'constant',
-                               constant_values=const)
+        r_chars, r_indices = self.loader.prepare_text(text2)
         r_indices = np.reshape(r_indices, (1, -1))
 
+        return self.model.predict([l_indices, r_indices])[0, 0]
+
+    def vec_distance(self, v1, v2):
+        const = 0
+
+        l_indices = np.pad(v1, (0, self.loader.sentence_len - np.size(v1, -1)), 'constant',
+                           constant_values=const)
+        l_indices = np.reshape(l_indices, (1, -1))
+        r_indices = np.pad(v2, (0, self.loader.sentence_len - np.size(v2, -1)), 'constant',
+                           constant_values=const)
+        r_indices = np.reshape(r_indices, (1, -1))
         return self.model.predict([l_indices, r_indices])[0, 0]
 
     def save(self):
@@ -215,13 +215,15 @@ class LSTMSiameseWord(LSTMSiameseNet):
 
     def _create_model(self):
         twin = Sequential(name='Twin')
+        twin.add(Masking(mask_value=0,
+                         input_shape=(self.loader.sentence_len, self.loader.embed_dims)))
         twin.add(Bidirectional(LSTM(self.recurrent_neurons[0], implementation=1,
                                     return_sequences=True,
                                     dropout=0.0,
                                     activation='tanh',
                                     recurrent_dropout=self.dropout,
                                     kernel_regularizer=regularizers.l2(self.recurrent_reg)),
-                               input_shape=(self.loader.sentence_len, self.loader.embed_dims))
+                               )
                  )
         for n in self.recurrent_neurons[1:-1]:
             twin.add(Bidirectional(LSTM(n, implementation=1,
@@ -262,3 +264,43 @@ class LSTMSiameseWord(LSTMSiameseNet):
         out = Activation('relu', name='Out')(merged)
 
         self.model = Model(inputs=(left_in, right_in), outputs=out)
+
+    @classmethod
+    def load(cls, directory, **loader_opts):
+        loader = TwinWordLoader.load(directory, **loader_opts)
+
+        f1 = os.path.join(directory, 'weights.hdf5')
+        f2 = open(os.path.join(directory, 'config.pkl'), 'rb')
+
+        config = pickle.load(f2)
+        f2.close()
+
+        recurrent_neurons = config['recurrent_neurons']
+        dense_units = config['dense_units']
+        recurrent_reg = config.get('recurrent_reg', 0.03)
+        dense_reg = config.get('dense_reg', 0.03)
+        dropout = config.get('dropout', 0.0)
+
+        lstm = LSTMSiameseWord(loader, recurrent_neurons=recurrent_neurons,
+                               dropout=dropout, dense_units=dense_units,
+                               recurrent_reg=recurrent_reg, dense_reg=dense_reg)
+        lstm.model.load_weights(f1)
+        return lstm
+
+    def distance(self, text1, text2):
+        t1 = ' '.join(text1).strip()
+        t2 = ' '.join(text1).strip()
+
+        l_chars, l_indices = self.loader.prepare_text(t1)
+        l_indices = np.reshape(l_indices, (1, -1))
+
+        r_chars, r_indices = self.loader.prepare_text(t2)
+        r_indices = np.reshape(r_indices, (1, -1))
+
+        return self.model.predict([l_indices, r_indices])[0, 0]
+
+    def vec_distance(self, v1, v2):
+        m1 = v1.reshape((1, self.loader.sentence_len, self.loader.embed_dims))
+        m2 = v2.reshape((1, self.loader.sentence_len, self.loader.embed_dims))
+
+        return self.model.predict([m1, m2])[0, 0]

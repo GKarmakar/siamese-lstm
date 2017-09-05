@@ -236,16 +236,23 @@ class TwinWordLoader(TwinLoader):
         return loader
 
     def _create_matrices(self, alias, combined_values):
-        self.X[alias] = (np.ones((len(combined_values), self.sentence_len, self.embed_dims), dtype=int),
-                         np.ones((len(combined_values), self.sentence_len, self.embed_dims), dtype=int))
+        self.X[alias] = (np.zeros((len(combined_values), self.sentence_len, self.embed_dims), dtype=float),
+                         np.zeros((len(combined_values), self.sentence_len, self.embed_dims), dtype=float))
         self.y[alias] = np.zeros((len(combined_values),))
 
         for i, tup in enumerate(combined_values):
             d1, d2 = tup[0][0], tup[1][0]
             l1, l2 = tup[0][1], tup[1][1]
 
-            for j, c in enumerate(nltk.word_tokenize(d1)):
+            for j, c in enumerate(nltk.word_tokenize(d1)[:self.sentence_len]):
                 self.X[alias][0][i, j] = self._embedder[c]
-            for j, c in enumerate(nltk.word_tokenize(d2)):
+            for j, c in enumerate(nltk.word_tokenize(d2)[:self.sentence_len]):
                 self.X[alias][1][i, j] = self._embedder[c]
             self.y[alias][i] = self.pos_value if l1 == l2 else self.neg_value
+
+    def prepare_text(self, text):
+        words = nltk.word_tokenize(text)[:self.sentence_len]
+        vec = np.zeros((self.sentence_len, self.embed_dims), dtype=float)
+        for i, w in enumerate(words):
+            vec[i] = self._embedder[w]
+        return words, vec
