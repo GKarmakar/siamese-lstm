@@ -6,9 +6,9 @@ import os
 
 os.environ['KERAS_BACKEND'] = 'tensorflow'
 
-from siamese.loader import TwinLoader
-from siamese.model import LSTMSiameseNet
-from siamese.settings.default import *
+from siamese.loader import TwinWordLoader
+from siamese.model import LSTMSiameseWord
+from siamese.settings.word_default import *
 from charlm.utils.settings import *
 
 
@@ -23,9 +23,6 @@ def main(argv):
                         help='The epoch to start training from. Useful when resuming.')
     parser.add_argument('--balance', dest='BALANCE', action='store_true',
                         help='Whether to balance the dataset before training.')
-    parser.add_argument('--dynamic', dest='DYNAMIC', action='store_true',
-                        help='Makes the model generate data dynamically during training. '
-                             'Helps reduce memory usage for large datasets')
 
     args = parser.parse_args(argv)
 
@@ -43,26 +40,27 @@ def main(argv):
         os.makedirs(DIRECTORY, exist_ok=True)
 
         print('Loading data...')
-        loader = TwinLoader(paths=PATHS, path_alias=ALIAS, nlines=LINE_LIMIT,
-                            embed_type=EMBED_TYPE, embed_dims=EMBED_DIM, sentence_len=SENTENCE_LEN)
-        loader.load_data(skip_gen=args.DYNAMIC)
+        loader = TwinWordLoader(paths=PATHS, path_alias=ALIAS, nlines=LINE_LIMIT,
+                                embed_type=EMBED_TYPE, embed_dims=EMBED_DIM,
+                                sentence_len=SENTENCE_LEN, fasttext_path=FASTTEXT_PATH)
+        loader.load_data(skip_gen=True)
         print('Loading complete.')
         print('\tTotal document count: %d' % loader.doc_count)
         print('\tUnique characters: %d' % (len(loader.index_to_char) - 2))
 
         print('Creating model...')
-        model = LSTMSiameseNet(loader, dense_units=DENSE_UNITS, recurrent_neurons=RECURRENT_NEURONS,
-                               dropout=DROPOUT, recurrent_reg=RECURRENT_REGULARIZER,
-                               dense_reg=DENSE_REGULARIZER, directory=DIRECTORY,
-                               merge_layer=MERGE_LAYER)
+        model = LSTMSiameseWord(loader, dense_units=DENSE_UNITS, recurrent_neurons=RECURRENT_NEURONS,
+                                dropout=DROPOUT, recurrent_reg=RECURRENT_REGULARIZER,
+                                dense_reg=DENSE_REGULARIZER, directory=DIRECTORY,
+                                merge_layer=MERGE_LAYER)
     else:
         print('Loading model from  %s ...' % args.RESUME_MODEL)
-        model = LSTMSiameseNet.load(args.RESUME_MODEL)
+        model = LSTMSiameseWord.load(args.RESUME_MODEL)
 
     SETTINGS_MAP.update({
+        'FAST_TEXT_PATH': model.loader.fasttext_path,
         'SENTENCE_LEN': model.loader.sentence_len,
         'PATHS': model.loader.paths,
-        'EMBED_TYPE': model.loader.get_embed_type(),
         'EMBED_DIM': model.loader.embed_dims,
         'LINE_LIMIT': model.loader.nlines,
         'RECURRENT_NEURONS': model.recurrent_neurons,
@@ -82,10 +80,10 @@ def main(argv):
     print('Starting training...')
     try:
         if not args.BALANCE:
-            model.train(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM, generate=args.DYNAMIC)
+            model.train(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM, generate=True)
         else:
             model.loader.balance()
-            model.train_balanced(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM, generate=args.DYNAMIC)
+            model.train_balanced(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM, generate=True)
     except KeyboardInterrupt:
         print('\nTraining interrupted...')
 

@@ -7,7 +7,7 @@ from siamese.model import LSTMSiameseNet
 
 class NeuralKNN:
     def __init__(self, model_path, k=1):
-        self.model = LSTMSiameseNet.load(model_path)
+        self.model = LSTMSiameseNet.load(model_path, skip_gen=True)
         self._classifier = KNeighborsClassifier(n_neighbors=k,
                                                 metric=self.model.distance,
                                                 algorithm='brute')

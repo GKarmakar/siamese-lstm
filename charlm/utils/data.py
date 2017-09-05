@@ -54,12 +54,12 @@ class DataLoader:
             self.raw[alias] = [l.strip()[:self.sentence_len-1] for l in lines]
 
         all_raw = [j for i in self.raw.values() for j in i]
-        self._index_chars(all_raw)
+        self._index_tokens(all_raw)
         self._embed_func()
         if not skip_gen:
             self._create_data()
 
-    def _index_chars(self, documents):
+    def _index_tokens(self, documents):
         self.char_to_index = {}
         self.index_to_char = []
 
@@ -201,6 +201,7 @@ class DataLoader:
 
         return loader
 
+    @property
     def doc_count(self):
         total = 0
         for v in self.raw.values():

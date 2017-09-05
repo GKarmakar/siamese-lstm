@@ -3,10 +3,12 @@ from charlm import MASK_TOKEN, SENTENCE_END_TOKEN
 
 import math
 import numpy as np
+import fasttext as ft
 import itertools
 import os
 import pickle
 import random
+import nltk
 
 
 class TwinLoader(DataLoader):
@@ -39,7 +41,7 @@ class TwinLoader(DataLoader):
             self.raw_label[alias] = [l.strip() for l in label]
 
         all_raw = [j for i in self.raw.values() for j in i]
-        self._index_chars(all_raw)
+        self._index_tokens(all_raw)
         self._embed_func()
         if not skip_gen:
             self._create_data()
@@ -53,9 +55,9 @@ class TwinLoader(DataLoader):
             y_values = self.raw_label[alias]
             combined_values = [(x, y) for x, y in zip(x_values, y_values)]
             combined_values = list(itertools.combinations(combined_values, 2))
-            self.__create_matrices(alias, combined_values)
+            self._create_matrices(alias, combined_values)
 
-    def __create_matrices(self, alias, combined_values):
+    def _create_matrices(self, alias, combined_values):
         self.X[alias] = (np.ones((len(combined_values), self.sentence_len), dtype=int) *
                          self.char_to_index[MASK_TOKEN],
                          np.ones((len(combined_values), self.sentence_len), dtype=int) *
@@ -79,7 +81,7 @@ class TwinLoader(DataLoader):
         combined_values = list(itertools.combinations(combined_values, 2))
         while True:
             for i in range(batch_size, len(combined_values), batch_size):
-                self.__create_matrices(key, combined_values[i - batch_size:i])
+                self._create_matrices(key, combined_values[i - batch_size:i])
                 yield [self.X[key][0], self.X[key][1]], self.y[key]
 
     def steps_per_epoch(self, key, batch_size):
@@ -108,7 +110,7 @@ class TwinLoader(DataLoader):
                     break
 
         random.shuffle(combined_values)
-        self.__create_matrices(alias, combined_values)
+        self._create_matrices(alias, combined_values)
 
     def save(self, folder):
         f1 = os.path.join(folder, 'loader.pkl')
@@ -133,7 +135,7 @@ class TwinLoader(DataLoader):
             f.close()
 
     @classmethod
-    def load(cls, folder):
+    def load(cls, folder, skip_gen=False):
         f1 = os.path.join(folder, 'loader.pkl')
 
         with open(f1, 'rb') as f:
@@ -162,9 +164,88 @@ class TwinLoader(DataLoader):
             loader.index_to_char = index_to_char
             loader.raw = raw
             loader.raw_label = raw_label
-            loader._create_data()
+            if not skip_gen:
+                loader._create_data()
         except KeyError as e:
             # print('WARNING: Can\'t locate loader indices. Reloading might cause inaccuracies...')
             # loader.load_data()
             raise e
         return loader
+
+
+class TwinWordLoader(TwinLoader):
+    def __init__(self, fasttext_path='data/fasttext/vi.bin', **kwargs):
+        TwinLoader.__init__(self, **kwargs)
+        self.fasttext_path = fasttext_path
+        self._embedder = ft.load_model(fasttext_path)
+        self.embed_dims = self._embedder.dim
+        self._embed_func = lambda: None
+
+    def load_data(self, skip_gen=True):
+        if not skip_gen:
+            print('WARNING: Automatically skipping data extraction for memory.')
+        TwinLoader.load_data(self, skip_gen=True)
+
+    def save(self, folder):
+        f1 = os.path.join(folder, 'loader.pkl')
+
+        config = {
+            'paths': self.paths,
+            'path_alias': self.path_alias,
+            'nlines': self.nlines,
+            'sentence_len': self.sentence_len,
+            'raw': self.raw,
+            'raw_label': self.raw_label,
+            'pos_value': self.pos_value,
+            'neg_value': self.neg_value,
+            'ft_path': self.fasttext_path
+        }
+
+        with open(f1, 'wb') as f:
+            pickle.dump(config, f, pickle.HIGHEST_PROTOCOL)
+            f.close()
+
+    @classmethod
+    def load(cls, folder, skip_gen=True):
+        f1 = os.path.join(folder, 'loader.pkl')
+
+        with open(f1, 'rb') as f:
+            config = pickle.load(f)
+            f.close()
+        paths = config.get('paths', None)
+        path_alias = config.get('path_alias', None)
+        nlines = config.get('nlines', None)
+        sentence_len = config['sentence_len']
+        pos_value = config.get('pos_value', 0.0)
+        neg_value = config.get('neg_value', 1.0)
+        ft_path = config.get('ft_path', 'data/fasttext/vi.bin')
+
+        loader = TwinWordLoader(fasttext_path=ft_path, pos_value=pos_value, neg_value=neg_value,
+                                paths=paths, path_alias=path_alias, nlines=nlines,
+                                sentence_len=sentence_len)
+
+        try:
+            raw_label = config['raw_label']
+            raw = config['raw']
+            loader.raw = raw
+            loader.raw_label = raw_label
+        except KeyError as e:
+            # print('WARNING: Can\'t locate loader indices. Reloading might cause inaccuracies...')
+            # loader.load_data()
+            raise e
+        return loader
+
+    def _create_matrices(self, alias, combined_values):
+        self.X[alias] = (np.ones((len(combined_values), self.sentence_len, self.embed_dims), dtype=int),
+                         np.ones((len(combined_values), self.sentence_len, self.embed_dims), dtype=int))
+        self.y[alias] = np.zeros((len(combined_values),))
+
+        for i, tup in enumerate(combined_values):
+            d1, d2 = tup[0][0], tup[1][0]
+            l1, l2 = tup[0][1], tup[1][1]
+
+            for j, c in enumerate(nltk.word_tokenize(d1)):
+                self.X[alias][0][i, j] = self._embedder[c]
+            for j, c in enumerate(nltk.word_tokenize(d2)):
+                self.X[alias][1][i, j] = self._embedder[c]
+            self.y[alias][i] = self.pos_value if l1 == l2 else self.neg_value

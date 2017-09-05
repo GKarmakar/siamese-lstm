@@ -181,8 +181,8 @@ class LSTMSiameseNet(LSTMLanguageModel):
             f.close()
 
     @classmethod
-    def load(cls, directory):
-        loader = TwinLoader.load(directory)
+    def load(cls, directory, **loader_opts):
+        loader = TwinLoader.load(directory, **loader_opts)
 
         f1 = os.path.join(directory, 'weights.hdf5')
         f2 = open(os.path.join(directory, 'config.pkl'), 'rb')
@@ -204,3 +204,61 @@ class LSTMSiameseNet(LSTMLanguageModel):
 
     def predict(self, text, end_at, verbose=0):
         raise NotImplementedError('This method is inherited and unused. Use distance(t1, t2) instead.')
+
+
+class LSTMSiameseWord(LSTMSiameseNet):
+    def __init__(self, loader, **kwargs):
+        LSTMSiameseNet.__init__(self, loader, **kwargs)
+
+    def predict(self, text, end_at, verbose=0):
+        raise NotImplementedError('This method is inherited and unused. Use distance(t1, t2) instead.')
+
+    def _create_model(self):
+        twin = Sequential(name='Twin')
+        twin.add(Bidirectional(LSTM(self.recurrent_neurons[0], implementation=1,
+                                    return_sequences=True,
+                                    dropout=0.0,
+                                    activation='tanh',
+                                    recurrent_dropout=self.dropout,
+                                    kernel_regularizer=regularizers.l2(self.recurrent_reg)),
+                               input_shape=(self.loader.sentence_len, self.loader.embed_dims))
+                 )
+        for n in self.recurrent_neurons[1:-1]:
+            twin.add(Bidirectional(LSTM(n, implementation=1,
+                                        return_sequences=True,
+                                        dropout=0.0,
+                                        activation='tanh',
+                                        recurrent_dropout=self.dropout,
+                                        kernel_regularizer=regularizers.l2(self.recurrent_reg))))
+
+        if self.dense_units > 0:
+            twin.add(LSTM(self.recurrent_neurons[-1], implementation=1,
+                          return_sequences=False,
+                          dropout=self.dropout,
+                          activation='hard_sigmoid',
+                          recurrent_dropout=self.dropout,
+                          kernel_regularizer=regularizers.l2(self.recurrent_reg)))
+            twin.add(Dense(self.dense_units, activation='linear',
+                           kernel_regularizer=regularizers.l2(self.dense_reg)))
+        else:
+            twin.add(LSTM(self.recurrent_neurons[-1], implementation=1,
+                          return_sequences=False,
+                          dropout=self.dropout,
+                          activation='linear',
+                          recurrent_dropout=self.dropout,
+                          kernel_regularizer=regularizers.l2(self.recurrent_reg)))
+
+        left_in = Input((self.loader.sentence_len, self.loader.embed_dims), name='Left_Inp')
+        left_twin = twin(left_in)
+        right_in = Input((self.loader.sentence_len, self.loader.embed_dims), name='Right_Inp')
+        right_twin = twin(right_in)
+
+        # noinspection PyCallingNonCallable
+        merged = self.merge_layer(name='Merge')([left_twin, right_twin])
+        # out = Dense(1, activation='relu',
+        #             weights=[np.ones((self.recurrent_neurons[-1], 1)), np.ones(1)],
+        #             trainable=False)(merged)
+        # out = merged
+        out = Activation('relu', name='Out')(merged)
+
+        self.model = Model(inputs=(left_in, right_in), outputs=out)
