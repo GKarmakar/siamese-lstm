@@ -41,8 +41,8 @@ def main(argv):
 
         print('Loading data...')
         loader = TwinWordLoader(paths=PATHS, path_alias=ALIAS, nlines=LINE_LIMIT,
-                                embed_type=EMBED_TYPE, embed_dims=EMBED_DIM,
-                                sentence_len=SENTENCE_LEN, fasttext_path=FASTTEXT_PATH)
+                                sentence_len=SENTENCE_LEN,
+                                fasttext_path=FASTTEXT_PATH)
         loader.load_data(skip_gen=True)
         print('Loading complete.')
         print('\tTotal document count: %d' % loader.doc_count)

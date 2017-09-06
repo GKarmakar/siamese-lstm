@@ -11,7 +11,7 @@ class NeuralKNN:
         self.model = LSTMSiameseNet.load(model_path, skip_gen=True)
         self._classifier = KNeighborsClassifier(n_neighbors=k,
                                                 metric=self.model.vec_distance,
-                                                algorithm='brute')
+                                                algorithm='ball_tree')
         self._isfit = False
 
     def _format_data(self, key):
@@ -35,7 +35,7 @@ class NeuralKNN:
         if not self._isfit:
             self.fit()
         chars, array = self.model.loader.prepare_text(text)
-        return self._classifier.predict(array)[0]
+        return self._classifier.predict(array.reshape(1, -1))[0]
 
     def evaluate(self, key='test', sample_weight=None):
         if not self._isfit:
@@ -79,7 +79,7 @@ class NeuralWordKNN:
         if not self._isfit:
             self.fit()
         chars, array = self.model.loader.prepare_text(text)
-        return self._classifier.predict(array)[0]
+        return self._classifier.predict(array.flatten().reshape(1, -1))[0]
 
     def evaluate(self, key='test', sample_weight=None):
         if not self._isfit:

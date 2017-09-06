@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Plots Index</title>
+</head>
+<body>
+    <h1>Available plots</h1>
+    <ul>
+        {% for id in file_index %}
+        <li>
+            <a target="_blank" href="{{ id }}">{{ id }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

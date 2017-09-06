@@ -7,7 +7,7 @@ def energy_loss(y_true, y_pred):
 
 
 def mean_rectified_infinity_loss(y_true, y_pred):
-    k = 1.0
+    k = 5.0
 
     cond = K.equal(y_true, K.zeros_like(y_true))
     if K.backend() == 'tensorflow':

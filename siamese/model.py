@@ -1,3 +1,5 @@
+import nltk
+
 from charlm.model.callbacks import LSTMCallback
 from keras.callbacks import CSVLogger, EarlyStopping, TensorBoard
 from keras.models import Model, Sequential
@@ -88,6 +90,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
         out = Activation('relu', name='Out')(merged)
 
         self.model = Model(inputs=(left_in, right_in), outputs=out)
+        self.inner_model = twin
 
     def compile(self, optimizer=RMSprop, learning_rate=0.001):
         self.model.compile(optimizer(lr=learning_rate), loss=mean_rectified_infinity_loss,
@@ -205,6 +208,14 @@ class LSTMSiameseNet(LSTMLanguageModel):
     def predict(self, text, end_at, verbose=0):
         raise NotImplementedError('This method is inherited and unused. Use distance(t1, t2) instead.')
 
+    def predict_sent_vector(self, sent):
+        vin = np.zeros((1, self.loader.sentence_len))
+        for i, c in enumerate(list(sent)[:self.loader.sentence_len]):
+            vin[0, i] = self.loader.char_to_index[c]
+
+        vout = self.inner_model.predict(vin, verbose=0)
+        return vout
+
 
 class LSTMSiameseWord(LSTMSiameseNet):
     def __init__(self, loader, **kwargs):
@@ -264,6 +275,7 @@ class LSTMSiameseWord(LSTMSiameseNet):
         out = Activation('relu', name='Out')(merged)
 
         self.model = Model(inputs=(left_in, right_in), outputs=out)
+        self.inner_model = twin
 
     @classmethod
     def load(cls, directory, **loader_opts):
@@ -298,6 +310,14 @@ class LSTMSiameseWord(LSTMSiameseNet):
         r_indices = np.reshape(r_indices, (1, -1))
 
         return self.model.predict([l_indices, r_indices])[0, 0]
+
+    def predict_sent_vector(self, sent):
+        vin = np.zeros((1, self.loader.sentence_len, self.loader.embed_dims))
+        for i, w in enumerate(nltk.word_tokenize(sent)[:self.loader.sentence_len]):
+            vin[0, i] = self.loader.embedder[w]
+
+        vout = self.inner_model.predict(vin, verbose=0)
+        return vout
 
     def vec_distance(self, v1, v2):
         m1 = v1.reshape((1, self.loader.sentence_len, self.loader.embed_dims))

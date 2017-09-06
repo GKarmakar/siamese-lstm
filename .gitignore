@@ -3,3 +3,6 @@ data/
 .idea/
 **/__pycache__/
 trained/
+plots/*.html
+!plots/index.html
+

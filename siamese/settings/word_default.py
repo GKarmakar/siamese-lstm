@@ -1,9 +1,7 @@
 # Data settings
-SENTENCE_LEN = 100
+SENTENCE_LEN = 50
 FASTTEXT_PATH = 'data/fasttext/vi.bin'
 PATHS = ('data/intent_detector/train.tsv', 'data/intent_detector/test.tsv', 'data/intent_detector/test.tsv')
-EMBED_TYPE = 'hot_coded'
-EMBED_DIM = None
 LINE_LIMIT = (10, 10, None)
 POS_VALUE = 0.0
 NEG_VALUE = 1.0

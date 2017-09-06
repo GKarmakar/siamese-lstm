@@ -177,8 +177,8 @@ class TwinWordLoader(TwinLoader):
     def __init__(self, fasttext_path='data/fasttext/vi.bin', **kwargs):
         TwinLoader.__init__(self, **kwargs)
         self.fasttext_path = fasttext_path
-        self._embedder = ft.load_model(fasttext_path)
-        self.embed_dims = self._embedder.dim
+        self.embedder = ft.load_model(fasttext_path)
+        self.embed_dims = self.embedder.dim
         self._embed_func = lambda: None
 
     def load_data(self, skip_gen=True):
@@ -245,14 +245,14 @@ class TwinWordLoader(TwinLoader):
             l1, l2 = tup[0][1], tup[1][1]
 
             for j, c in enumerate(nltk.word_tokenize(d1)[:self.sentence_len]):
-                self.X[alias][0][i, j] = self._embedder[c]
+                self.X[alias][0][i, j] = self.embedder[c]
             for j, c in enumerate(nltk.word_tokenize(d2)[:self.sentence_len]):
-                self.X[alias][1][i, j] = self._embedder[c]
+                self.X[alias][1][i, j] = self.embedder[c]
             self.y[alias][i] = self.pos_value if l1 == l2 else self.neg_value
 
     def prepare_text(self, text):
         words = nltk.word_tokenize(text)[:self.sentence_len]
         vec = np.zeros((self.sentence_len, self.embed_dims), dtype=float)
         for i, w in enumerate(words):
-            vec[i] = self._embedder[w]
+            vec[i] = self.embedder[w]
         return words, vec
