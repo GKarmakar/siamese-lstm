@@ -1,5 +1,6 @@
 from charlm.utils.data import DataLoader
 from charlm import MASK_TOKEN, SENTENCE_END_TOKEN
+# from gensim.models.wrappers import FastText
 
 import math
 import numpy as np
@@ -177,6 +178,8 @@ class TwinWordLoader(TwinLoader):
     def __init__(self, fasttext_path='data/fasttext/vi.bin', **kwargs):
         TwinLoader.__init__(self, **kwargs)
         self.fasttext_path = fasttext_path
+
+        # self.embedder = FastText.load(fasttext_path)
         self.embedder = ft.load_model(fasttext_path)
         self.embed_dims = self.embedder.dim
         self._embed_func = lambda: None

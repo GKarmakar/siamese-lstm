@@ -19,7 +19,7 @@ def parse_arguments():
                         help='1 for character-level model. 2 for word-level model. This needs to correspond with '
                              'the loaded model\'s type for the script to run correctly.')
     parser.add_argument('-f', '--file', dest='FILE', default='lstm.html',
-                        help='The name HTML file to which the plot is saved. '
+                        help='The name of the HTML file to which the plot is saved. '
                              'The file will always be put in the plots/ directory.')
     return parser.parse_args()
 
@@ -46,7 +46,8 @@ def main(args):
                   'rgb(232, 128, 23)', 'rgb(173, 23, 232)', 'rgb(232, 86, 220)',
                   'rgb(22, 9, 97)', 'rgb(6, 71, 19)', 'rgb(143, 196, 57)',
                   'rgb(18, 196, 113)', 'rgb(114, 128, 135)', 'rgb(224, 177, 177)']
-    label_color = {raw_labels[0]: color_pool.pop(0)}
+    color_pool.reverse()
+    label_color = {raw_labels[0]: color_pool.pop()}
     colors = [label_color[raw_labels[0]]]
 
     print('Predicting vectors...')
@@ -54,9 +55,9 @@ def main(args):
     for i, s in enumerate(raw[1:]):
         print('\t%d/%d' % (i+2, len(raw)), end='\r')
         mat = np.vstack((mat, model.predict_sent_vector(s)))
-        if raw_labels[i] not in label_color.keys():
-            label_color[raw_labels[i]] = color_pool.pop(0)
-        colors.append(label_color[raw_labels[i]])
+        if raw_labels[i+1] not in label_color.keys():
+            label_color[raw_labels[i+1]] = color_pool.pop()
+        colors.append(label_color[raw_labels[i+1]])
     print('')
 
     print('Running PCA...', end=' ')
@@ -82,6 +83,7 @@ def main(args):
         title='Siamese LSTM sentence embeddings',
         hovermode='closest', showlegend=False,
     )
+
 
     fig = gobj.Figure(data=points, layout=layout)
     plotly.offline.plot(fig, filename=os.path.join('plots', args.FILE), auto_open=False)
