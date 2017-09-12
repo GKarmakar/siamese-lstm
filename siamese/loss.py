@@ -12,10 +12,14 @@ def mean_rectified_infinity_loss(y_true, y_pred):
     cond = K.equal(y_true, K.zeros_like(y_true))
     if K.backend() == 'tensorflow':
         import tensorflow as tf
-        err = tf.where(cond, K.square(y_pred - y_true), K.exp(-y_pred / k))
+        # err = tf.where(cond, K.square(y_pred - y_true), K.exp(-y_pred / k))
+        err = tf.where(cond, K.square(y_pred),
+                       k/K.square(K.clip(y_pred, min_value=K.epsilon(), max_value=float('inf'))))
     else:
         from theano.ifelse import ifelse
-        err = ifelse(cond, K.square(y_pred - y_true), K.exp(-y_pred / k))
+        # err = ifelse(cond, K.square(y_pred - y_true), K.exp(-y_pred / k))
+        err = ifelse(cond, K.square(y_pred),
+                     k/K.square(K.clip(y_pred, min_value=K.epsilon(), max_value=float('inf'))))
 
     return K.mean(err, axis=-1)
 
