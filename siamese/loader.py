@@ -1,6 +1,6 @@
 from charlm.utils.data import DataLoader
 from charlm import MASK_TOKEN, SENTENCE_END_TOKEN
-# from gensim.models.wrappers import FastText
+from gensim.models.wrappers import FastText
 
 import math
 import numpy as np
@@ -175,13 +175,18 @@ class TwinLoader(DataLoader):
 
 
 class TwinWordLoader(TwinLoader):
-    def __init__(self, fasttext_path='data/fasttext/vi.bin', **kwargs):
+    def __init__(self, fasttext_path='data/fasttext/wiki.vi', **kwargs):
         TwinLoader.__init__(self, **kwargs)
         self.fasttext_path = fasttext_path
 
-        # self.embedder = FastText.load(fasttext_path)
-        self.embedder = ft.load_model(fasttext_path)
-        self.embed_dims = self.embedder.dim
+        try:
+            self.embedder = ft.load_model(fasttext_path + '.bin')
+            self.embed_dims = self.embedder.dim
+            print('Loaded via fasttext.')
+        except:
+            self.embedder = FastText.load_fasttext_format(fasttext_path)
+            print('Loaded via gensim.')
+
         self._embed_func = lambda: None
 
     def load_data(self, skip_gen=True):

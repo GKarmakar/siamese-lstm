@@ -1,6 +1,6 @@
 # Data settings
 SENTENCE_LEN = 50
-FASTTEXT_PATH = 'data/fasttext/vi.bin'
+FASTTEXT_PATH = 'data/fasttext/vi'
 PATHS = ('data/intent_detector/train.tsv', 'data/intent_detector/test.tsv', 'data/intent_detector/test.tsv')
 LINE_LIMIT = (10, 10, None)
 POS_VALUE = 0.0
