@@ -324,3 +324,7 @@ class LSTMSiameseWord(LSTMSiameseNet):
         m2 = v2.reshape((1, self.loader.sentence_len, self.loader.embed_dims))
 
         return self.model.predict([m1, m2])[0, 0]
+
+    @property
+    def output_vec_len(self):
+        return self.inner_model.output_shape[-1]
