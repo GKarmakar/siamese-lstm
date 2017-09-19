@@ -41,7 +41,7 @@ def main(argv):
 
         print('Loading data...')
         loader = TwinWordLoader(paths=PATHS, path_alias=ALIAS, nlines=LINE_LIMIT,
-                                sentence_len=SENTENCE_LEN,
+                                sentence_len=SENTENCE_LEN, embed_dims=EMBED_DIMS,
                                 fasttext_path=FASTTEXT_PATH)
         loader.load_data(skip_gen=True)
         print('Loading complete.')

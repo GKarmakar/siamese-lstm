@@ -5,6 +5,7 @@ PATHS = ('data/intent_detector/train.tsv', 'data/intent_detector/test.tsv', 'dat
 LINE_LIMIT = (10, 10, None)
 POS_VALUE = 0.0
 NEG_VALUE = 1.0
+EMBED_DIMS = 100
 
 # Model settings
 RECURRENT_NEURONS = (512, 512, 128)
