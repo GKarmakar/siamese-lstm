@@ -206,7 +206,8 @@ class TwinWordLoader(TwinLoader):
             'raw_label': self.raw_label,
             'pos_value': self.pos_value,
             'neg_value': self.neg_value,
-            'ft_path': self.fasttext_path
+            'ft_path': self.fasttext_path,
+            'embed_dims': self.embed_dims,
         }
 
         with open(f1, 'wb') as f:
@@ -226,11 +227,12 @@ class TwinWordLoader(TwinLoader):
         sentence_len = config['sentence_len']
         pos_value = config.get('pos_value', 0.0)
         neg_value = config.get('neg_value', 1.0)
+        embed_dims = config.get('embed_dims', 100)
         ft_path = config.get('ft_path', 'data/fasttext/vi.bin')
 
         loader = TwinWordLoader(fasttext_path=ft_path, pos_value=pos_value, neg_value=neg_value,
                                 paths=paths, path_alias=path_alias, nlines=nlines,
-                                sentence_len=sentence_len)
+                                sentence_len=sentence_len, embed_dims=embed_dims)
 
         try:
             raw_label = config['raw_label']

@@ -20,8 +20,10 @@ try:
 
     evaluating = True
     print('Evaluating...')
+    train_acc = model.evaluate(key=args.SET)
     acc = model.evaluate(key=args.VAL_SET)
 
+    print('\nTraining accuracy: %.3f' % train_acc)
     print('\nAccuracy: %.3f' % acc)
 except FileNotFoundError:
     print('Invalid model directory')
