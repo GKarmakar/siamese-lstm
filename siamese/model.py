@@ -130,7 +130,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
                                   validation_data=([left_test, right_test], y_test),
                                   batch_size=batch_size, epochs=epochs,
                                   callbacks=callbacks, initial_epoch=start_from,
-                                  shuffle=False)
+                                  shuffle=True)
         else:
             return self.model.fit_generator(self.loader.generate(train_key, batch_size),
                                             steps_per_epoch=self.loader.steps_per_epoch(train_key, batch_size),
