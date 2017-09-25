@@ -314,7 +314,7 @@ class LSTMSiameseWord(LSTMSiameseNet):
     def predict_sent_vector(self, sent):
         vin = np.zeros((1, self.loader.sentence_len, self.loader.embed_dims))
         for i, w in enumerate(nltk.word_tokenize(sent)[:self.loader.sentence_len]):
-            vin[0, i] = self.loader.embedder[w]
+            vin[0, i] = self.loader.get_embed(w)
 
         vout = self.inner_model.predict(vin, verbose=0)
         return vout
