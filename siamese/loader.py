@@ -255,14 +255,20 @@ class TwinWordLoader(TwinLoader):
             l1, l2 = tup[0][1], tup[1][1]
 
             for j, c in enumerate(nltk.word_tokenize(d1)[:self.sentence_len]):
-                self.X[alias][0][i, j] = self.embedder[c]
+                self.X[alias][0][i, j] = self.get_embed(c)
             for j, c in enumerate(nltk.word_tokenize(d2)[:self.sentence_len]):
-                self.X[alias][1][i, j] = self.embedder[c]
+                self.X[alias][1][i, j] = self.get_embed(c)
             self.y[alias][i] = self.pos_value if l1 == l2 else self.neg_value
 
     def prepare_text(self, text):
         words = nltk.word_tokenize(text)[:self.sentence_len]
         vec = np.zeros((self.sentence_len, self.embed_dims), dtype=float)
         for i, w in enumerate(words):
-            vec[i] = self.embedder[w]
+            vec[i] = self.get_embed(w)
         return words, vec
+
+    def get_embed(self, word):
+        try:
+            return self.embedder[word]
+        except KeyError:
+            return np.ones((1, self.embed_dims), dtype=np.float32)
