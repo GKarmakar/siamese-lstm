@@ -102,7 +102,8 @@ class LSTMSiameseNet(LSTMLanguageModel):
               generate=False):
         stopper = EarlyStopping(monitor='val_loss', patience=4)
         stopper2 = EarlyStopping(monitor='loss', patience=2)
-        callbacks = [stopper, stopper2]
+        # callbacks = [stopper, stopper2]
+        callbacks = [stopper2]
 
         if callback:
             if keras.backend.backend() == 'tensorflow':
@@ -110,7 +111,8 @@ class LSTMSiameseNet(LSTMLanguageModel):
                                     batch_size=batch_size, histogram_freq=0,
                                     write_images=True, write_grads=True)
                 callbacks.append(board)
-            primary = LSTMCallback(self, metric='val_loss')
+            # primary = LSTMCallback(self, metric='val_loss')
+            primary = LSTMCallback(self, metric='loss')
             logger = CSVLogger(self.directory + '/epochs.csv')
             # noinspection PyTypeChecker
             callbacks.extend([primary, logger])
