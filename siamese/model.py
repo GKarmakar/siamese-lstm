@@ -98,7 +98,7 @@ class LSTMSiameseNet(LSTMLanguageModel):
         # self.model.compile(optimizer(lr=learning_rate), loss=mean_rectified_infinity_loss,
         #                    metrics=[mean_rectified_infinity_loss])
         self.model.compile(optimizer(lr=learning_rate), loss='mse',
-                           metrics=['mae'])
+                           metrics=['mse', 'mae'])
         self._compiled = True
 
     def train(self, epochs=100, batch_size=30, start_from=0,

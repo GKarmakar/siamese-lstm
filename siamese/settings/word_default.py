@@ -3,8 +3,8 @@ SENTENCE_LEN = 50
 FASTTEXT_PATH = 'data/fasttext/vi'
 PATHS = ('data/intent_corpus2/train.tsv', 'data/intent_corpus2/test.tsv', 'data/intent_corpus2/test.tsv')
 LINE_LIMIT = (10, 10, None)
-POS_VALUE = 0.0
-NEG_VALUE = 1.0
+POS_VALUE = 1.0
+NEG_VALUE = 0.0
 EMBED_DIMS = 100
 
 # Model settings
