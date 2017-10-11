@@ -30,6 +30,8 @@ class LSTMSiameseNet(LSTMLanguageModel):
             self.merge_layer = Diff
         elif merge_layer == 'cosine':
             self.merge_layer = CosineDist
+        elif merge_layer == 'expdiff':
+            self.merge_layer = ExpDiff
         elif inspect.isclass(merge_layer):
             self.merge_layer = merge_layer
         else:
@@ -93,8 +95,10 @@ class LSTMSiameseNet(LSTMLanguageModel):
         self.inner_model = twin
 
     def compile(self, optimizer=RMSprop, learning_rate=0.001):
-        self.model.compile(optimizer(lr=learning_rate), loss=mean_rectified_infinity_loss,
-                           metrics=[mean_rectified_infinity_loss])
+        # self.model.compile(optimizer(lr=learning_rate), loss=mean_rectified_infinity_loss,
+        #                    metrics=[mean_rectified_infinity_loss])
+        self.model.compile(optimizer(lr=learning_rate), loss='mse',
+                           metrics=['mae'])
         self._compiled = True
 
     def train(self, epochs=100, batch_size=30, start_from=0,

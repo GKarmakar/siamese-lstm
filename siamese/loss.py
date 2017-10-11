@@ -3,7 +3,7 @@ import keras.backend as K
 
 
 def energy_loss(y_true, y_pred):
-    pass
+    return K.exp(-K.abs(y_true - y_pred))
 
 
 def mean_rectified_infinity_loss(y_true, y_pred):
@@ -42,6 +42,13 @@ class Diff(Add):
         else:
             output_shape = (None,) + output_shape
         return output_shape
+
+
+class ExpDiff(Diff):
+    def _merge_function(self, inputs):
+        diff = K.abs(inputs[1] - inputs[0])
+        sdiff = K.sqrt(K.sum(K.square(diff)))
+        return K.exp(-sdiff)
 
 
 class CosineDist(Add):
