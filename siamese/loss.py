@@ -44,11 +44,11 @@ class Diff(Add):
         return output_shape
 
 
-class ExpDiff(Diff):
+class ExpDiff(Add):
     def _merge_function(self, inputs):
         diff = K.abs(inputs[1] - inputs[0])
-        sdiff = K.sqrt(K.sum(K.square(diff)))
-        return K.exp(-sdiff)
+        # sdiff = K.sqrt(K.sum(K.square(diff)))
+        return K.exp(-diff)
 
 
 class CosineDist(Add):

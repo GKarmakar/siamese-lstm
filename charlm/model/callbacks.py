@@ -14,3 +14,5 @@ class LSTMCallback(Callback):
             print("\nSaving model to %s..." % self.lstm.directory, end=' ')
             self.lstm.save()
             print('Done.\n')
+        else:
+            print('\nNo improvement on metric. Skipping save...\n')

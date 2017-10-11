@@ -80,7 +80,8 @@ def main(argv):
     print('Starting training...')
     try:
         if not args.BALANCE:
-            model.train(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM, generate=True)
+            model.train(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM, generate=True,
+                        callback=True)
         else:
             model.loader.balance()
             model.train_balanced(epochs=EPOCHS, batch_size=BATCH_SIZE, start_from=args.FROM, generate=True)

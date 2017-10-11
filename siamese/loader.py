@@ -182,10 +182,8 @@ class TwinWordLoader(TwinLoader):
         try:
             self.embedder = ft.load_model(fasttext_path + '.bin')
             self.embed_dims = self.embedder.dim
-            print('Loaded via fasttext.')
         except:
             self.embedder = FastText.load_fasttext_format(fasttext_path)
-            print('Loaded via gensim.')
 
         self._embed_func = lambda: None
 
@@ -248,7 +246,8 @@ class TwinWordLoader(TwinLoader):
     def _create_matrices(self, alias, combined_values):
         self.X[alias] = (np.zeros((len(combined_values), self.sentence_len, self.embed_dims), dtype=float),
                          np.zeros((len(combined_values), self.sentence_len, self.embed_dims), dtype=float))
-        self.y[alias] = np.zeros((len(combined_values),))
+        # self.y[alias] = np.zeros((len(combined_values),))
+        self.y[alias] = np.zeros((len(combined_values), 2))
 
         for i, tup in enumerate(combined_values):
             d1, d2 = tup[0][0], tup[1][0]
@@ -258,7 +257,11 @@ class TwinWordLoader(TwinLoader):
                 self.X[alias][0][i, j] = self.get_embed(c)
             for j, c in enumerate(nltk.word_tokenize(d2)[:self.sentence_len]):
                 self.X[alias][1][i, j] = self.get_embed(c)
-            self.y[alias][i] = self.pos_value if l1 == l2 else self.neg_value
+            # self.y[alias][i] = self.pos_value if l1 == l2 else self.neg_value
+            if l1 == l2:
+                self.y[alias][i, 0] = 1
+            else:
+                self.y[alias][i, 1] = 1
 
     def prepare_text(self, text):
         words = nltk.word_tokenize(text)[:self.sentence_len]

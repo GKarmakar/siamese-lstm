@@ -85,20 +85,14 @@ class LSTMSiameseNet(LSTMLanguageModel):
 
         # noinspection PyCallingNonCallable
         merged = self.merge_layer(name='Merge')([left_twin, right_twin])
-        # out = Dense(1, activation='relu',
-        #             weights=[np.ones((self.recurrent_neurons[-1], 1)), np.ones(1)],
-        #             trainable=False)(merged)
-        # out = merged
         out = Activation('relu', name='Out')(merged)
 
         self.model = Model(inputs=(left_in, right_in), outputs=out)
         self.inner_model = twin
 
     def compile(self, optimizer=RMSprop, learning_rate=0.001):
-        # self.model.compile(optimizer(lr=learning_rate), loss=mean_rectified_infinity_loss,
-        #                    metrics=[mean_rectified_infinity_loss])
-        self.model.compile(optimizer(lr=learning_rate), loss='mse',
-                           metrics=['mse', 'mae'])
+        self.model.compile(optimizer(lr=learning_rate), loss=mean_rectified_infinity_loss,
+                           metrics=[mean_rectified_infinity_loss])
         self._compiled = True
 
     def train(self, epochs=100, batch_size=30, start_from=0,
@@ -274,11 +268,9 @@ class LSTMSiameseWord(LSTMSiameseNet):
 
         # noinspection PyCallingNonCallable
         merged = self.merge_layer(name='Merge')([left_twin, right_twin])
-        # out = Dense(1, activation='relu',
-        #             weights=[np.ones((self.recurrent_neurons[-1], 1)), np.ones(1)],
-        #             trainable=False)(merged)
-        # out = merged
-        out = Activation('relu', name='Out')(merged)
+        out = Dense(2, activation='softmax',
+                    trainable=True, name='Out')(merged)
+        # out = Activation('relu', name='Out')(merged)
 
         self.model = Model(inputs=(left_in, right_in), outputs=out)
         self.inner_model = twin
@@ -330,6 +322,11 @@ class LSTMSiameseWord(LSTMSiameseNet):
         m2 = v2.reshape((1, self.loader.sentence_len, self.loader.embed_dims))
 
         return self.model.predict([m1, m2])[0, 0]
+
+    def compile(self, optimizer=RMSprop, learning_rate=0.001):
+        self.model.compile(optimizer(lr=learning_rate), loss='categorical_crossentropy',
+                           metrics=['acc'])
+        self._compiled = True
 
     @property
     def output_vec_len(self):
