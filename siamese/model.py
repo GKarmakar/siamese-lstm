@@ -68,13 +68,13 @@ class LSTMSiameseNet(LSTMLanguageModel):
                           activation='hard_sigmoid',
                           recurrent_dropout=self.dropout,
                           kernel_regularizer=regularizers.l2(self.recurrent_reg)))
-            twin.add(Dense(self.dense_units, activation='linear',
+            twin.add(Dense(self.dense_units, activation='tanh',
                            kernel_regularizer=regularizers.l2(self.dense_reg)))
         else:
             twin.add(LSTM(self.recurrent_neurons[-1], implementation=1,
                           return_sequences=False,
                           dropout=self.dropout,
-                          activation='linear',
+                          activation='tanh',
                           recurrent_dropout=self.dropout,
                           kernel_regularizer=regularizers.l2(self.recurrent_reg)))
 
