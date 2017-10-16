@@ -268,9 +268,9 @@ class LSTMSiameseWord(LSTMSiameseNet):
 
         # noinspection PyCallingNonCallable
         merged = self.merge_layer(name='Merge')([left_twin, right_twin])
-        out = Dense(2, activation='softmax',
-                    trainable=True, name='Out')(merged)
-        # out = Activation('relu', name='Out')(merged)
+        # out = Dense(2, activation='softmax',
+        #             trainable=True, name='Out')(merged)
+        out = Activation('relu', name='Out')(merged)
 
         self.model = Model(inputs=(left_in, right_in), outputs=out)
         self.inner_model = twin
